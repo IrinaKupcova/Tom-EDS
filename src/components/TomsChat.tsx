@@ -25,7 +25,7 @@ export function TomsChat({ messages, onSend, onAuth, onSubmitSummary, suggestion
   const prev = useRef(messages.length);
 
   useEffect(() => {
-    if (messages.length > prev.current && messages[messages.length - 1].from === "user") setTyping(true);
+    if (messages.length > prev.current && messages[messages.length - 1]?.from === "user") setTyping(true);
     else setTyping(false);
     prev.current = messages.length;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });

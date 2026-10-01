@@ -33,7 +33,7 @@ function VidPage() {
       <div className="bg-primary text-primary-foreground">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2 text-xs">
           <span>Prototips · 1. iterācija</span>
-          <Link to="/eds" className="underline">Atvērt EDS → Sarakste ar VID</Link>
+          <Link to="/eds" search={{}} className="underline">Atvērt EDS → Sarakste ar VID</Link>
         </div>
       </div>
       <header className="border-b border-border bg-card">
@@ -43,7 +43,7 @@ function VidPage() {
           <nav className="ml-auto hidden gap-6 text-sm font-bold uppercase md:flex">
             <span>Privātpersonām</span><span>Uzņēmējiem</span><span>Muita</span><span>Par VID</span>
           </nav>
-          <Link to="/eds" className="btn-vid">EDS</Link>
+          <Link to="/eds" search={{}} className="btn-vid">EDS</Link>
         </div>
       </header>
 

@@ -4,7 +4,7 @@ import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import { clearConversation, edsReply, loadConversation, type Summary } from "@/lib/toms";
 
 export const Route = createFileRoute("/eds")({
-  validateSearch: (s: Record<string, unknown>) => ({ no: typeof s.no === "string" ? s.no : undefined }),
+  validateSearch: (s: Record<string, unknown>): { no?: string } => ({ no: typeof s["no"] === "string" ? (s["no"] as string) : undefined }),
   head: () => ({
     meta: [
       { title: "EDS Sarakste ar VID — jaunā pieeja (prototips)" },
