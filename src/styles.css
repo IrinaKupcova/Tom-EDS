@@ -51,6 +51,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-accent-orange: var(--accent-orange);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -62,16 +63,18 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.125rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.2 0.01 260);
+  --accent-orange: oklch(0.72 0.17 55);
+  --shadow-panel: 0 12px 32px -8px oklch(0.28 0.12 264 / 0.35);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
+  --primary: oklch(0.28 0.12 264);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.93 0.01 260);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
@@ -141,4 +144,24 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+body { font-family: Arial, Helvetica, sans-serif; }
+@layer components {
+  .btn-vid { @apply bg-primary text-primary-foreground px-4 py-2 text-sm font-bold hover:opacity-90; }
+  .btn-vid-outline { @apply border border-primary text-primary bg-card px-4 py-2 text-sm hover:bg-muted; }
+  .input-vid { @apply border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary; }
+  .crest { @apply flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-xs font-bold text-primary; }
+  .toms-avatar { @apply flex shrink-0 items-center justify-center rounded-full bg-accent-orange font-bold text-primary-foreground; }
+  .bubble-toms { @apply max-w-[85%] bg-card border border-border px-3 py-2 text-sm; }
+  .bubble-user { @apply max-w-[85%] bg-primary text-primary-foreground px-3 py-2 text-sm; }
+  .chip { @apply border border-primary px-3 py-1 text-xs text-primary hover:bg-muted; }
+  .eds-menu { @apply flex items-center justify-between px-5 py-3 text-sm; }
+  .eds-menu-active { @apply font-bold border-r-4 border-primary; }
+  .badge-count { @apply flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground; }
+  .eds-tab { @apply px-6 py-2 underline text-foreground; }
+  .eds-tab-active { @apply px-6 py-2 border border-b-0 border-border bg-card -mb-px font-bold text-primary; }
+  .cat-card { @apply border border-border bg-card p-4 text-left transition hover:border-primary; }
+  .cat-card-active { @apply border-primary border-2 bg-muted; }
+  .tag-ai { @apply bg-accent-orange px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground; }
 }
