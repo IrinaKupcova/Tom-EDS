@@ -19,11 +19,11 @@ import {
 export const Route = createFileRoute("/eds")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { no?: string; category?: CommunicationCategory } => ({
-    no: typeof s.no === "string" ? s.no : undefined,
+  ): { no?: string | undefined; category?: CommunicationCategory | undefined } => ({
+    no: typeof s["no"] === "string" ? s["no"] : undefined,
     category:
-      s.category === "chat" || s.category === "doc" || s.category === "customs"
-        ? s.category
+      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs"
+        ? s["category"]
         : undefined,
   }),
   head: () => ({
