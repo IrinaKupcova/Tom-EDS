@@ -4,3 +4,6 @@
 - [x] Verify public-to-EDS conversation continuation and submission flows.
 - [x] Match EDS shell and initial unread mailbox to image-8 while preserving communication workflows.
 - [x] Verify mailbox tabs, document submission and EDS layout.
+- [ ] Replace EDS Toms branding with virtual-assistant identification throughout.
+- [ ] Demonstrate personalized information retrieval and direct replies; reserve specialist forwarding for illustrative complex cases.
+- [ ] Verify direct answers, follow-up questions, specialist submission and public conversation continuation.
