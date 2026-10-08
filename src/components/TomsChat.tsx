@@ -1,10 +1,29 @@
 import { useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
 import type { Msg, Summary } from "@/lib/toms";
+import { Button } from "@/components/ui/button";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputFooter,
+  PromptInputSubmit,
+} from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 
 export function TomsAvatar({ size = 36 }: { size?: number }) {
   return (
-    <div className="toms-avatar" style={{ width: size, height: size, fontSize: size * 0.42 }} aria-hidden>
-      T
+    <div
+      className="toms-avatar"
+      style={{ width: size, height: size, fontSize: size * 0.34 }}
+      aria-hidden
+    >
+      <span>T</span>
     </div>
   );
 }
@@ -16,87 +35,174 @@ type Props = {
   onSubmitSummary?: (s: Summary) => void;
   suggestions?: string[];
   compact?: boolean;
+  busy?: boolean;
 };
-
-export function TomsChat({ messages, onSend, onAuth, onSubmitSummary, suggestions, compact }: Props) {
+export function TomsChat({
+  messages,
+  onSend,
+  onAuth,
+  onSubmitSummary,
+  suggestions,
+  compact,
+  busy = false,
+}: Props) {
   const [text, setText] = useState("");
-  const [typing, setTyping] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
-  const prev = useRef(messages.length);
-
-  useEffect(() => {
-    if (messages.length > prev.current && messages[messages.length - 1]?.from === "user") setTyping(true);
-    else setTyping(false);
-    prev.current = messages.length;
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages]);
-
-  const send = (v: string) => {
-    if (!v.trim()) return;
-    onSend(v.trim());
+  const send = (value: string) => {
+    if (!value.trim() || busy) return;
+    onSend(value.trim());
     setText("");
   };
-
+  const first = !messages.some((m) => m.from === "user");
   return (
-    <div className={`flex flex-col ${compact ? "h-[420px]" : "h-[480px]"}`}>
-      <div className="flex-1 space-y-3 overflow-y-auto bg-muted p-4">
-        {messages.map((m, i) =>
-          m.from === "system" ? (
-            <div key={i} className="mx-auto w-fit rounded bg-secondary px-3 py-1 text-xs text-secondary-foreground">{m.text}</div>
-          ) : (
-            <div key={i} className={`flex gap-2 ${m.from === "user" ? "justify-end" : ""}`}>
-              {m.from === "toms" && <TomsAvatar size={28} />}
-              <div className={m.from === "user" ? "bubble-user" : "bubble-toms"}>
-                <p>{m.text}</p>
-                {m.action === "auth" && onAuth && (
-                  <button onClick={onAuth} className="btn-vid mt-3 w-full">Autentificēties EDS</button>
-                )}
-                {m.action === "summary" && m.summary && onSubmitSummary && i === messages.length - 1 && (
-                  <div className="mt-3 border border-border bg-card p-3 text-sm">
-                    <div className="mb-2 font-bold text-primary">Iesnieguma kopsavilkums</div>
-                    <dl className="grid grid-cols-[110px_1fr] gap-y-1">
-                      <dt className="text-muted-foreground">Kategorija</dt><dd>{m.summary.kategorija}</dd>
-                      <dt className="text-muted-foreground">Tēma</dt><dd>{m.summary.tema}</dd>
-                      <dt className="text-muted-foreground">Adresāts</dt><dd>{m.summary.struktura}</dd>
-                    </dl>
-                    <p className="mt-2 text-xs text-muted-foreground">Toms aizpildīja automātiski – nekas nav jāizvēlas.</p>
-                    <div className="mt-3 flex gap-2">
-                      <button className="btn-vid" onClick={() => onSubmitSummary(m.summary!)}>Nosūtīt VID</button>
-                      <button className="btn-vid-outline" onClick={() => send("Vēlos papildināt")}>Papildināt</button>
-                    </div>
+    <div
+      className={`toms-chat flex min-h-0 flex-col ${compact ? "h-[410px]" : "h-[375px] sm:h-[375px]"}`}
+    >
+      <Conversation className="bg-chat-surface" aria-label="Saruna ar Tomu">
+        <ConversationContent className="gap-3 p-4">
+          {messages.map((m, i) =>
+            m.from === "system" ? (
+              <p key={i} className="text-center text-xs text-muted-foreground">
+                {m.text}
+              </p>
+            ) : (
+              <Message
+                from={m.from === "user" ? "user" : "assistant"}
+                key={i}
+                className="max-w-full"
+              >
+                <div className={`flex items-start gap-2 ${m.from === "user" ? "justify-end" : ""}`}>
+                  {m.from === "toms" && <TomsAvatar size={23} />}
+                  <MessageContent className={m.from === "user" ? "bubble-user" : "bubble-toms"}>
+                    <MessageResponse>{m.text}</MessageResponse>
+                    {m.action === "auth" && onAuth && (
+                      <Button onClick={onAuth} className="mt-2">
+                        Autentificēties EDS
+                      </Button>
+                    )}
+                    {m.action === "summary" &&
+                      m.summary &&
+                      onSubmitSummary &&
+                      i === messages.length - 1 && (
+                        <div className="mt-2 border-t border-border pt-3 text-xs">
+                          <p className="mb-2 font-bold text-primary">Iesnieguma kopsavilkums</p>
+                          <dl className="grid grid-cols-[85px_minmax(0,1fr)] gap-2">
+                            <dt>Kategorija</dt>
+                            <dd>{m.summary.kategorija}</dd>
+                            <dt>Tēma</dt>
+                            <dd>{m.summary.tema}</dd>
+                            <dt>Adresāts</dt>
+                            <dd>{m.summary.struktura}</dd>
+                            <dt>Teksts</dt>
+                            <dd className="whitespace-pre-wrap">{m.summary.teksts}</dd>
+                          </dl>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (m.summary) onSubmitSummary(m.summary);
+                              }}
+                            >
+                              Nosūtīt VID
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                document
+                                  .querySelector<HTMLTextAreaElement>('[aria-label="Ziņa Tomam"]')
+                                  ?.focus()
+                              }
+                            >
+                              Papildināt
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                  </MessageContent>
+                </div>
+                {first && i === 0 && suggestions && (
+                  <div className="ml-8 flex flex-wrap gap-1.5">
+                    {suggestions.map((s) => (
+                      <Button
+                        key={s}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => send(s)}
+                        className="h-auto rounded-full border-chat-primary px-3 py-1.5 text-left text-xs text-chat-primary whitespace-normal"
+                      >
+                        {s}
+                      </Button>
+                    ))}
                   </div>
                 )}
-              </div>
+              </Message>
+            ),
+          )}
+          {busy && (
+            <div className="flex items-center gap-2">
+              <TomsAvatar size={23} />
+              <Shimmer className="text-xs">Toms raksta…</Shimmer>
             </div>
-          ),
-        )}
-        {typing && (
-          <div className="flex gap-2"><TomsAvatar size={28} /><div className="bubble-toms text-muted-foreground">Toms raksta…</div></div>
-        )}
-        <div ref={endRef} />
+          )}
+        </ConversationContent>
+        <ConversationScrollButton aria-label="Uz pēdējo ziņu" />
+      </Conversation>
+      <div className="border-t border-border bg-card p-3">
+        <PromptInput className="toms-composer" onSubmit={({ text: value }) => send(value)}>
+          <PromptInputTextarea
+            aria-label="Ziņa Tomam"
+            placeholder="Rakstiet šeit…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={busy}
+            className="min-h-9 text-sm"
+          />
+          <PromptInputFooter className="justify-end">
+            <PromptInputSubmit
+              aria-label="Nosūtīt ziņu"
+              title="Nosūtīt ziņu"
+              status={busy ? "submitted" : "ready"}
+              disabled={busy || !text.trim()}
+              className="size-8 shrink-0 rounded-full"
+            >
+              <Send size={15} />
+            </PromptInputSubmit>
+          </PromptInputFooter>
+        </PromptInput>
+        <p className="mt-2 text-center text-[10px] text-muted-foreground">
+          Sarunu veic mākslīgais intelekts. Neievadiet sensitīvus personas datus.
+        </p>
       </div>
-      {suggestions && messages.filter((m) => m.from === "user").length === 0 && (
-        <div className="flex flex-wrap gap-2 border-t border-border bg-card px-3 pt-3">
-          {suggestions.map((s) => (
-            <button key={s} onClick={() => send(s)} className="chip">{s}</button>
-          ))}
-        </div>
-      )}
-      <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="flex gap-2 border-t border-border bg-card p-3">
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Uzrakstiet savu jautājumu…" className="input-vid flex-1" />
-        <button className="btn-vid">Sūtīt</button>
-      </form>
     </div>
   );
 }
 
 export function useScriptedChat(initial: Msg[], reply: (text: string, turn: number) => Msg[]) {
   const [messages, setMessages] = useState<Msg[]>(initial);
+  const [busy, setBusy] = useState(false);
   const turn = useRef(0);
-  const send = (text: string) => {
-    setMessages((m) => [...m, { from: "user", text }]);
-    const r = reply(text, turn.current++);
-    setTimeout(() => setMessages((m) => [...m, ...r]), 900);
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (pending.current) clearTimeout(pending.current);
+    },
+    [],
+  );
+  const reset = (next: Msg[] = []) => {
+    if (pending.current) clearTimeout(pending.current);
+    setBusy(false);
+    turn.current = 0;
+    setMessages(next);
   };
-  return { messages, setMessages, send, turn };
+  const send = (text: string) => {
+    if (busy) return;
+    setMessages((m) => [...m, { from: "user", text }]);
+    setBusy(true);
+    const r = reply(text, turn.current++);
+    pending.current = setTimeout(() => {
+      setMessages((m) => [...m, ...r]);
+      setBusy(false);
+    }, 650);
+  };
+  return { messages, setMessages, send, turn, busy, reset };
 }
