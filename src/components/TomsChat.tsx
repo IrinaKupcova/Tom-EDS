@@ -2,50 +2,179 @@ import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import type { Msg, Summary } from "@/lib/toms";
 import { Button } from "@/components/ui/button";
-import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputFooter,
+  PromptInputSubmit,
+} from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 
 export function TomsAvatar({ size = 36 }: { size?: number }) {
-  return <div className="toms-avatar" style={{ width: size, height: size, fontSize: size * 0.34 }} aria-hidden><span>T</span></div>;
+  return (
+    <div
+      className="toms-avatar"
+      style={{ width: size, height: size, fontSize: size * 0.34 }}
+      aria-hidden
+    >
+      <span>T</span>
+    </div>
+  );
 }
 
-type Props = { messages: Msg[]; onSend: (text: string) => void; onAuth?: () => void; onSubmitSummary?: (s: Summary) => void; suggestions?: string[]; compact?: boolean; busy?: boolean };
-export function TomsChat({ messages, onSend, onAuth, onSubmitSummary, suggestions, compact, busy = false }: Props) {
+type Props = {
+  messages: Msg[];
+  onSend: (text: string) => void;
+  onAuth?: () => void;
+  onSubmitSummary?: (s: Summary) => void;
+  suggestions?: string[];
+  compact?: boolean;
+  busy?: boolean;
+};
+export function TomsChat({
+  messages,
+  onSend,
+  onAuth,
+  onSubmitSummary,
+  suggestions,
+  compact,
+  busy = false,
+}: Props) {
   const [text, setText] = useState("");
-  const send = (value: string) => { if (!value.trim() || busy) return; onSend(value.trim()); setText(""); };
-  const first = !messages.some(m => m.from === "user");
-  return <div className={`toms-chat flex min-h-0 flex-col ${compact ? "h-[410px]" : "h-[375px] sm:h-[375px]"}`}>
-    <Conversation className="bg-chat-surface" aria-label="Saruna ar Tomu">
-      <ConversationContent className="gap-3 p-4">
-        {messages.map((m, i) => m.from === "system" ? <p key={i} className="text-center text-xs text-muted-foreground">{m.text}</p> : <Message from={m.from === "user" ? "user" : "assistant"} key={i} className="max-w-full">
-          <div className={`flex items-start gap-2 ${m.from === "user" ? "justify-end" : ""}`}>
-            {m.from === "toms" && <TomsAvatar size={23} />}
-            <MessageContent className={m.from === "user" ? "bubble-user" : "bubble-toms"}>
-              <MessageResponse>{m.text}</MessageResponse>
-              {m.action === "auth" && onAuth && <Button onClick={onAuth} className="mt-2">Autentificēties EDS</Button>}
-              {m.action === "summary" && m.summary && onSubmitSummary && i === messages.length - 1 && <div className="mt-2 border-t border-border pt-3 text-xs">
-                <p className="mb-2 font-bold text-primary">Iesnieguma kopsavilkums</p>
-                <dl className="grid grid-cols-[85px_minmax(0,1fr)] gap-2"><dt>Kategorija</dt><dd>{m.summary.kategorija}</dd><dt>Tēma</dt><dd>{m.summary.tema}</dd><dt>Adresāts</dt><dd>{m.summary.struktura}</dd><dt>Teksts</dt><dd className="whitespace-pre-wrap">{m.summary.teksts}</dd></dl>
-                <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={() => { if (m.summary) onSubmitSummary(m.summary); }}>Nosūtīt VID</Button><Button variant="outline" size="sm" onClick={() => document.querySelector<HTMLTextAreaElement>('[aria-label="Ziņa Tomam"]')?.focus()}>Papildināt</Button></div>
-              </div>}
-            </MessageContent>
-          </div>
-          {first && i === 0 && suggestions && <div className="ml-8 flex flex-wrap gap-1.5">{suggestions.map(s => <Button key={s} variant="outline" size="sm" onClick={() => send(s)} className="h-auto rounded-full border-chat-primary px-3 py-1.5 text-left text-xs text-chat-primary whitespace-normal">{s}</Button>)}</div>}
-        </Message>)}
-        {busy && <div className="flex items-center gap-2"><TomsAvatar size={23} /><Shimmer className="text-xs">Toms raksta…</Shimmer></div>}
-      </ConversationContent>
-      <ConversationScrollButton aria-label="Uz pēdējo ziņu" />
-    </Conversation>
-    <div className="border-t border-border bg-card p-3">
-      <PromptInput className="toms-composer" onSubmit={({ text: value }) => send(value)}>
-        <PromptInputTextarea aria-label="Ziņa Tomam" placeholder="Rakstiet šeit…" value={text} onChange={e => setText(e.target.value)} disabled={busy} className="min-h-9 text-sm" />
-        <PromptInputFooter className="justify-end"><PromptInputSubmit aria-label="Nosūtīt ziņu" title="Nosūtīt ziņu" status={busy ? "submitted" : "ready"} disabled={busy || !text.trim()} className="size-8 shrink-0 rounded-full"><Send size={15} /></PromptInputSubmit></PromptInputFooter>
-      </PromptInput>
-      <p className="mt-2 text-center text-[10px] text-muted-foreground">Sarunu veic mākslīgais intelekts. Neievadiet sensitīvus personas datus.</p>
+  const send = (value: string) => {
+    if (!value.trim() || busy) return;
+    onSend(value.trim());
+    setText("");
+  };
+  const first = !messages.some((m) => m.from === "user");
+  return (
+    <div
+      className={`toms-chat flex min-h-0 flex-col ${compact ? "h-[410px]" : "h-[375px] sm:h-[375px]"}`}
+    >
+      <Conversation className="bg-chat-surface" aria-label="Saruna ar Tomu">
+        <ConversationContent className="gap-3 p-4">
+          {messages.map((m, i) =>
+            m.from === "system" ? (
+              <p key={i} className="text-center text-xs text-muted-foreground">
+                {m.text}
+              </p>
+            ) : (
+              <Message
+                from={m.from === "user" ? "user" : "assistant"}
+                key={i}
+                className="max-w-full"
+              >
+                <div className={`flex items-start gap-2 ${m.from === "user" ? "justify-end" : ""}`}>
+                  {m.from === "toms" && <TomsAvatar size={23} />}
+                  <MessageContent className={m.from === "user" ? "bubble-user" : "bubble-toms"}>
+                    <MessageResponse>{m.text}</MessageResponse>
+                    {m.action === "auth" && onAuth && (
+                      <Button onClick={onAuth} className="mt-2">
+                        Autentificēties EDS
+                      </Button>
+                    )}
+                    {m.action === "summary" &&
+                      m.summary &&
+                      onSubmitSummary &&
+                      i === messages.length - 1 && (
+                        <div className="mt-2 border-t border-border pt-3 text-xs">
+                          <p className="mb-2 font-bold text-primary">Iesnieguma kopsavilkums</p>
+                          <dl className="grid grid-cols-[85px_minmax(0,1fr)] gap-2">
+                            <dt>Kategorija</dt>
+                            <dd>{m.summary.kategorija}</dd>
+                            <dt>Tēma</dt>
+                            <dd>{m.summary.tema}</dd>
+                            <dt>Adresāts</dt>
+                            <dd>{m.summary.struktura}</dd>
+                            <dt>Teksts</dt>
+                            <dd className="whitespace-pre-wrap">{m.summary.teksts}</dd>
+                          </dl>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (m.summary) onSubmitSummary(m.summary);
+                              }}
+                            >
+                              Nosūtīt VID
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                document
+                                  .querySelector<HTMLTextAreaElement>('[aria-label="Ziņa Tomam"]')
+                                  ?.focus()
+                              }
+                            >
+                              Papildināt
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                  </MessageContent>
+                </div>
+                {first && i === 0 && suggestions && (
+                  <div className="ml-8 flex flex-wrap gap-1.5">
+                    {suggestions.map((s) => (
+                      <Button
+                        key={s}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => send(s)}
+                        className="h-auto rounded-full border-chat-primary px-3 py-1.5 text-left text-xs text-chat-primary whitespace-normal"
+                      >
+                        {s}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </Message>
+            ),
+          )}
+          {busy && (
+            <div className="flex items-center gap-2">
+              <TomsAvatar size={23} />
+              <Shimmer className="text-xs">Toms raksta…</Shimmer>
+            </div>
+          )}
+        </ConversationContent>
+        <ConversationScrollButton aria-label="Uz pēdējo ziņu" />
+      </Conversation>
+      <div className="border-t border-border bg-card p-3">
+        <PromptInput className="toms-composer" onSubmit={({ text: value }) => send(value)}>
+          <PromptInputTextarea
+            aria-label="Ziņa Tomam"
+            placeholder="Rakstiet šeit…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={busy}
+            className="min-h-9 text-sm"
+          />
+          <PromptInputFooter className="justify-end">
+            <PromptInputSubmit
+              aria-label="Nosūtīt ziņu"
+              title="Nosūtīt ziņu"
+              status={busy ? "submitted" : "ready"}
+              disabled={busy || !text.trim()}
+              className="size-8 shrink-0 rounded-full"
+            >
+              <Send size={15} />
+            </PromptInputSubmit>
+          </PromptInputFooter>
+        </PromptInput>
+        <p className="mt-2 text-center text-[10px] text-muted-foreground">
+          Sarunu veic mākslīgais intelekts. Neievadiet sensitīvus personas datus.
+        </p>
+      </div>
     </div>
-  </div>;
+  );
 }
 
 export function useScriptedChat(initial: Msg[], reply: (text: string, turn: number) => Msg[]) {
@@ -53,13 +182,27 @@ export function useScriptedChat(initial: Msg[], reply: (text: string, turn: numb
   const [busy, setBusy] = useState(false);
   const turn = useRef(0);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (pending.current) clearTimeout(pending.current); }, []);
-  const reset = (next: Msg[] = []) => { if (pending.current) clearTimeout(pending.current); setBusy(false); turn.current = 0; setMessages(next); };
+  useEffect(
+    () => () => {
+      if (pending.current) clearTimeout(pending.current);
+    },
+    [],
+  );
+  const reset = (next: Msg[] = []) => {
+    if (pending.current) clearTimeout(pending.current);
+    setBusy(false);
+    turn.current = 0;
+    setMessages(next);
+  };
   const send = (text: string) => {
     if (busy) return;
-    setMessages(m => [...m, { from: "user", text }]); setBusy(true);
+    setMessages((m) => [...m, { from: "user", text }]);
+    setBusy(true);
     const r = reply(text, turn.current++);
-    pending.current = setTimeout(() => { setMessages(m => [...m, ...r]); setBusy(false); }, 650);
+    pending.current = setTimeout(() => {
+      setMessages((m) => [...m, ...r]);
+      setBusy(false);
+    }, 650);
   };
   return { messages, setMessages, send, turn, busy, reset };
 }
