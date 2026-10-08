@@ -52,7 +52,7 @@ export function edsReply(text: string, turn: number): Msg[] {
   const s = detectTopic(text);
   if (turn === 0) {
     return [
-      { from: "toms", text: `Sapratu – jautājums par tēmu „${s.tema}”. Pārbaudīju Jūsu datus EDS.` },
+      { from: "toms", text: `Sapratu – jautājums par tēmu „${s.tema}”. Sagatavošu ziņu atbildīgajam VID speciālistam.` },
       { from: "toms", text: "Vai vēlaties, lai sagatavoju iesniegumu VID speciālistam? Es aizpildīšu kategoriju un tēmu Jūsu vietā.", action: "summary", summary: s },
     ];
   }
