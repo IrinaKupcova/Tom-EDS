@@ -13,3 +13,4 @@
 - Use shared communication choices and an AI Elements-based Toms chat surface for public VID and EDS so the same workflows remain consistent.
 - Keep identification, chat replies and submissions explicitly simulated in this frontend prototype; no live VID connection exists.
 - Match the user's screenshots using semantic VID, EDS and chat color roles in the global stylesheet, not new independent themes.
+- Scope mailbox-shell tokens and layout overrides to EDS so screenshot fidelity changes do not alter the shared public VID interface.
