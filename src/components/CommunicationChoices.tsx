@@ -38,18 +38,18 @@ export function CommunicationChoices({
   return (
     <>
       <div className="toms-introduction mb-4 flex items-center gap-3 rounded-lg border border-chat-border bg-chat-header p-4">
-        <TomsAvatar />
+        <TomsAvatar virtualAssistant={!publicSite} />
         <div className="min-w-0 text-sm">
-          <div className="font-bold text-primary">Toms — VID virtuālais asistents</div>
+          <div className="font-bold text-primary">{publicSite ? "Toms — VID virtuālais asistents" : "VID virtuālais asistents"}</div>
           {!publicSite && (
             <div className="mt-1 text-xs text-muted-foreground">
-              <span className="online-dot" /> Tiešsaistē · atbildu uzreiz
+              <span className="online-dot" /> Virtuālais asistents · demonstrācija
             </div>
           )}
           <p className="mt-1 leading-5 text-muted-foreground">
             {publicSite
               ? "Atbildu uz jautājumiem, sniedzu instrukcijas un palīdzu sagatavot ziņu VID speciālistam."
-              : "Varu atbildēt uz jautājumu, izskaidrot darbības EDS vai palīdzēt sagatavot ziņu VID speciālistam."}
+              : "Atbildu uz jautājumiem un sameklēju informāciju par Jums iestādes informācijas sistēmās. Tikai sarežģītus jautājumus nododu speciālistam. Šeit datu saņemšana tiek demonstrēta."}
           </p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function CommunicationChoices({
               <span
                 className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${ai ? "bg-chat-accent text-chat-primary" : "bg-secondary text-muted-foreground"}`}
               >
-                {ai ? "Toms palīdz" : "Manuāla apstrāde"}
+                {ai ? (publicSite ? "Toms palīdz" : "Virtuālais asistents") : "Manuāla apstrāde"}
               </span>
               <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">
                 {desc}
@@ -82,7 +82,7 @@ export function CommunicationChoices({
         ))}
       </div>
       <p className="mt-2 text-[10px] text-muted-foreground">
-        Kategorijās “Toms palīdz” saziņu veic mākslīgais intelekts.
+        {publicSite ? "Kategorijās “Toms palīdz” saziņu veic mākslīgais intelekts." : "Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti."}
       </p>
     </>
   );

@@ -15,15 +15,16 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import crestAsset from "@/assets/vid-crest.asset.json";
 
-export function TomsAvatar({ size = 36 }: { size?: number }) {
+export function TomsAvatar({ size = 36, virtualAssistant = false }: { size?: number; virtualAssistant?: boolean }) {
   return (
     <div
       className="toms-avatar"
       style={{ width: size, height: size, fontSize: size * 0.34 }}
       aria-hidden
     >
-      <span>T</span>
+      {virtualAssistant ? <img src={crestAsset.url} alt="" className="h-4/5 w-4/5 object-contain" /> : <span>T</span>}
     </div>
   );
 }
@@ -36,6 +37,7 @@ type Props = {
   suggestions?: string[];
   compact?: boolean;
   busy?: boolean;
+  virtualAssistant?: boolean;
 };
 export function TomsChat({
   messages,
@@ -45,8 +47,10 @@ export function TomsChat({
   suggestions,
   compact,
   busy = false,
+  virtualAssistant = false,
 }: Props) {
   const [text, setText] = useState("");
+  const textarea = useRef<HTMLTextAreaElement>(null);
   const send = (value: string) => {
     if (!value.trim() || busy) return;
     onSend(value.trim());
@@ -57,7 +61,7 @@ export function TomsChat({
     <div
       className={`toms-chat flex min-h-0 flex-col ${compact ? "h-[410px]" : "h-[375px] sm:h-[375px]"}`}
     >
-      <Conversation className="bg-chat-surface" aria-label="Saruna ar Tomu">
+      <Conversation className="bg-chat-surface" aria-label={virtualAssistant ? "Saruna ar virtuālo asistentu" : "Saruna ar Tomu"}>
         <ConversationContent className="gap-3 p-4">
           {messages.map((m, i) =>
             m.from === "system" ? (
@@ -71,7 +75,7 @@ export function TomsChat({
                 className="max-w-full"
               >
                 <div className={`flex items-start gap-2 ${m.from === "user" ? "justify-end" : ""}`}>
-                  {m.from === "toms" && <TomsAvatar size={23} />}
+                  {m.from === "toms" && <TomsAvatar size={23} virtualAssistant={virtualAssistant} />}
                   <MessageContent className={m.from === "user" ? "bubble-user" : "bubble-toms"}>
                     <MessageResponse>{m.text}</MessageResponse>
                     {m.action === "auth" && onAuth && (
@@ -102,16 +106,12 @@ export function TomsChat({
                                 if (m.summary) onSubmitSummary(m.summary);
                               }}
                             >
-                              Nosūtīt VID
+                               {virtualAssistant ? "Nosūtīt speciālistam" : "Nosūtīt VID"}
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() =>
-                                document
-                                  .querySelector<HTMLTextAreaElement>('[aria-label="Ziņa Tomam"]')
-                                  ?.focus()
-                              }
+                              onClick={() => textarea.current?.focus()}
                             >
                               Papildināt
                             </Button>
@@ -140,8 +140,8 @@ export function TomsChat({
           )}
           {busy && (
             <div className="flex items-center gap-2">
-              <TomsAvatar size={23} />
-              <Shimmer className="text-xs">Toms raksta…</Shimmer>
+              <TomsAvatar size={23} virtualAssistant={virtualAssistant} />
+              <Shimmer className="text-xs">{virtualAssistant ? "Virtuālais asistents sagatavo atbildi…" : "Toms raksta…"}</Shimmer>
             </div>
           )}
         </ConversationContent>
@@ -150,7 +150,8 @@ export function TomsChat({
       <div className="border-t border-border bg-card p-3">
         <PromptInput className="toms-composer" onSubmit={({ text: value }) => send(value)}>
           <PromptInputTextarea
-            aria-label="Ziņa Tomam"
+            ref={textarea}
+            aria-label={virtualAssistant ? "Ziņa virtuālajam asistentam" : "Ziņa Tomam"}
             placeholder="Rakstiet šeit…"
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -170,7 +171,7 @@ export function TomsChat({
           </PromptInputFooter>
         </PromptInput>
         <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          Sarunu veic mākslīgais intelekts. Neievadiet sensitīvus personas datus.
+          {virtualAssistant ? "Virtuālais asistents · atbildes un IS dati ir simulēti. Neievadiet īstus sensitīvus personas datus." : "Sarunu veic mākslīgais intelekts. Neievadiet sensitīvus personas datus."}
         </p>
       </div>
     </div>

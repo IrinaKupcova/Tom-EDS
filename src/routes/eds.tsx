@@ -29,13 +29,13 @@ export const Route = createFileRoute("/eds")({
   }),
   head: () => ({
     meta: [
-      { title: "EDS — Sarakste ar VID | Toms" },
+      { title: "EDS — Sarakste ar VID | Virtuālais asistents" },
       {
         name: "description",
         content:
-          "EDS saziņas prototips: nodokļu un muitas jautājumi ar Tomu, dokumenta iesniegšana vai saziņa ar speciālistu.",
+          "EDS virtuālā asistenta prototips ar simulētām personalizētām atbildēm un sarežģītu jautājumu nodošanu speciālistam.",
       },
-      { property: "og:title", content: "EDS — Sarakste ar VID | Toms" },
+      { property: "og:title", content: "EDS — Sarakste ar VID | Virtuālais asistents" },
       { property: "og:description", content: "Vienkāršota saziņa ar VID EDS vidē." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -60,9 +60,9 @@ const MENU = [
 ];
 const TABS = ["Nelasītie", "Iesūtne", "Nosūtne", "Sagatavotie", "Rakstīt jaunu vēstuli"];
 const greetings = {
-  chat: "Labdien! Esmu Toms. Varu uzreiz atbildēt uz vienkāršu jautājumu, izskaidrot darbības EDS vai palīdzēt noformulēt ziņu VID speciālistam. Par ko vēlaties jautāt?",
+   chat: "Labdien! Esmu VID virtuālais asistents. Atbildu uz nodokļu jautājumiem un sameklēju informāciju par Jums iestādes IS. Tikai sarežģītus jautājumus nododu speciālistam. Šajā prototipā atbildes un dati ir simulēti. Par ko vēlaties jautāt?",
   customs:
-    "Labdien! Palīdzēšu atrast atbildi vai nosūtīt ziņu tieši atbildīgajai muitas struktūrvienībai.",
+    "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
 };
 function EdsPage() {
   const { no, category } = Route.useSearch();
@@ -83,7 +83,8 @@ function EdsPage() {
       topic.current === "customs"
         ? `Muitas jautājums: ${requestText.current}`
         : requestText.current;
-    return edsReply(combined, turn);
+    const continuingSummary = chat.messages.at(-1)?.action === "summary";
+    return edsReply(combined, turn, text, continuingSummary);
   });
   const choose = (c: CommunicationCategory) => {
     setTab(TABS[4]);
@@ -102,6 +103,7 @@ function EdsPage() {
         topic.current = c;
         requestText.current = lastUser;
         setCat(c);
+        setTab(TABS[4]);
         chat.reset([
           ...previous.filter((m) => m.action !== "auth"),
           { from: "system", text: "Identifikācija demonstrēta · saruna turpinās EDS" },
@@ -286,9 +288,9 @@ function EdsPage() {
                 <>
                   <section className="overflow-hidden rounded-lg border border-border">
                     <div className="flex items-center gap-3 border-b border-border bg-chat-header px-4 py-3">
-                      <TomsAvatar size={30} />
+                       <TomsAvatar size={30} virtualAssistant />
                       <div>
-                        <h3 className="text-sm font-bold text-primary">Toms</h3>
+                         <h3 className="text-sm font-bold text-primary">Virtuālais asistents</h3>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           <span className="online-dot" />
                           {cat === "customs" ? "Muitas jautājumi" : "Nodokļu jomas jautājumi"}
@@ -296,6 +298,7 @@ function EdsPage() {
                       </div>
                     </div>
                     <TomsChat
+                       virtualAssistant
                       messages={chat.messages}
                       onSend={chat.send}
                       busy={chat.busy}
@@ -305,9 +308,9 @@ function EdsPage() {
                           ? ["Pasta sūtījumi", "Muitas jautājumi", "Rakstu uz muitas punktu"]
                           : [
                               "Gada ienākumu deklarācija",
-                              "Nodokļu parāds",
+                               "Kāds man ir parāds?",
                               "Darbības EDS",
-                              "Palīdzi noformulēt iesniegumu",
+                               "Nepiekrītu aprēķinātajam parādam",
                             ]
                       }
                     />

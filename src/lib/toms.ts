@@ -84,7 +84,7 @@ export function publicReply(text: string): Msg[] {
     return [
       {
         from: "toms",
-        text: "Saprotu. Lai varētu apskatīt Jūsu personīgo informāciju un sagatavot iesniegumu VID, man Jūs ir jāidentificē.",
+        text: "Lai varētu sameklēt informāciju par Jums iestādes informācijas sistēmās un atbildēt uz Jūsu jautājumu, nepieciešama identifikācija. Šajā prototipā tā un personīgo datu saņemšana tiek demonstrēta.",
       },
       {
         from: "toms",
@@ -115,28 +115,37 @@ export function publicReply(text: string): Msg[] {
   ];
 }
 
-export function edsReply(text: string, turn: number): Msg[] {
+export function edsReply(text: string, _turn: number, latest = text, continuingSummary = false): Msg[] {
   const s = detectTopic(text);
-  if (turn === 0) {
+  const t = latest.toLowerCase();
+  // Illustrative scenarios only, not institution-approved complexity criteria.
+  const complex = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/.test(t);
+  if (complex || continuingSummary) {
     return [
       {
         from: "toms",
-        text: `Sapratu – jautājums par tēmu „${s.tema}”. Sagatavošu ziņu atbildīgajam VID speciālistam.`,
+        text: continuingSummary
+          ? "Papildināju jautājumu speciālistam. Pārbaudiet kopsavilkumu pirms nosūtīšanas."
+          : "Šajā demonstrācijas scenārijā jautājums ir sarežģīts un prasa speciālista izvērtējumu. Sagatavoju sarunas kopsavilkumu — Jums nav atkārtoti jāizvēlas kategorija un jāapraksta situācija. Sarežģītības noteikšanas kritēriji vēl tiks definēti.",
       },
       {
         from: "toms",
-        text: "Vai vēlaties, lai sagatavoju iesniegumu VID speciālistam? Es aizpildīšu kategoriju un tēmu Jūsu vietā.",
+        text: "Pārbaudiet tēmu, adresātu un tekstu. Nosūtīšana speciālistam šeit ir tikai demonstrācija.",
         action: "summary",
         summary: s,
       },
     ];
   }
-  return [
-    {
-      from: "toms",
-      text: "Pievienoju to iesniegumam. Pārbaudiet kopsavilkumu un nosūtiet.",
-      action: "summary",
-      summary: s,
-    },
+  const lookup = (answer: string): Msg[] => [
+    { from: "system", text: "Datu saņemšana no iestādes IS demonstrēta · izdomāti piemēra dati, nevis Jūsu faktiskā informācija" },
+    { from: "toms", text: answer },
   ];
+  if (/(parād|parad)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu nodokļu parāds ir **125,40 EUR**: pamatsumma 120,00 EUR un nokavējuma nauda 5,40 EUR. Informācijas avots šajā scenārijā: nodokļu uzskaites IS. Šo jautājumu virtuālais asistents atrisina uzreiz — speciālistam tas netiek nosūtīts.");
+  if (/(pārmaks|atmaks)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu nodokļa pārmaksa ir **86,20 EUR**. Atmaksas statuss: apstrādē. Informācijas avots šajā scenārijā: deklarāciju un nodokļu uzskaites IS. Šī ir asistenta atbilde, nevis iesniegums speciālistam.");
+  if (/(deklarācij|deklaracij)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu gada ienākumu deklarācija ir saņemta. Statuss: apstrādē. Informācijas avots šajā scenārijā: deklarāciju IS. Vai vēlaties precizēt jautājumu par deklarāciju?");
+  if (/(man.*(sūtījum|paka)|sūtījum.*status|paka.*status)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu pasta sūtījuma muitas deklarācija ir saņemta. Statuss: apstrādē. Informācijas avots šajā scenārijā: muitas IS. Speciālista iesaiste šim statusa pieprasījumam nav nepieciešama.");
+  if (/(samaks|apmaks|maksāt|maksat|nomaks)/.test(t)) return [{ from: "toms", text: "Nodokļu maksājumus varat veikt EDS sadaļā “Maksājumi”, izvēloties attiecīgo saistību. Šajā prototipā maksājums netiek veikts. Vai vēlaties precizēt, par kuru maksājumu jautājat?" }];
+  if (/(eds|darbīb)/.test(t)) return [{ from: "toms", text: "Dokumentus atradīsiet EDS sadaļā “Dokumenti”, bet saraksti — sadaļā “Sarakste ar VID”. Kuru darbību vēlaties veikt?" }];
+  if (/(muit|sūtījum|paka)/.test(t)) return [{ from: "toms", text: "Varu palīdzēt ar pasta sūtījuma deklarēšanu vai muitas deklarācijas statusu. Kas tieši Jūs interesē?" }];
+  return [{ from: "toms", text: "Lūdzu, precizējiet jautājumu. Varu sniegt skaidrojumu vai sameklēt informāciju par Jūsu parādu, pārmaksu vai deklarācijas statusu. Speciālista iesaiste paredzēta tikai sarežģītiem jautājumiem." }];
 }
