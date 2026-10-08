@@ -7,7 +7,6 @@ import {
   Globe,
   Mail,
   MapPin,
-  MessageSquare,
   Mouse,
   Phone,
   Search,
@@ -21,6 +20,8 @@ import {
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { publicReply, saveConversation, clearConversation } from "@/lib/toms";
+import crestAsset from "@/assets/vid-crest.asset.json";
+import tomsAsset from "@/assets/toms-portrait.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -190,10 +191,10 @@ function VidPage() {
       <section className="public-top">
         <div className="mx-auto flex flex-col items-center pb-14">
           <div className="h-[38px] w-[74px] bg-primary" />
-          <div
-            className="vid-official-logo mt-3 h-[80px] w-[80px]"
-            role="img"
-            aria-label="Latvijas valsts ģerbonis"
+          <img
+            src={crestAsset.url}
+            className="mt-3 h-[80px] w-[80px] object-contain"
+            alt="Latvijas valsts ģerbonis"
           />
           <h1 className="mt-2 text-sm font-normal">Valsts ieņēmumu dienests</h1>
         </div>
@@ -329,7 +330,7 @@ function VidPage() {
           >
             Es esmu VID virtuālais asistents TOMS. Droši jautājiet — centīšos palīdzēt.
             <span className="toms-public-avatar absolute -bottom-3 -right-1 grid size-14 place-items-center rounded-full border border-border bg-card">
-              <MessageSquare size={24} className="text-primary" />
+              <img src={tomsAsset.url} alt="Toms" className="size-full rounded-full object-cover" />
             </span>
           </Button>
         )}
