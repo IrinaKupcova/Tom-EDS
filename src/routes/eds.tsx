@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronRight, Menu, Star } from "lucide-react";
+import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
+import crestAsset from "@/assets/vid-crest.asset.json";
+import fundingAsset from "@/assets/eds-funding.asset.json";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
-  ViewSwitch,
   type CommunicationCategory,
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
@@ -65,13 +66,15 @@ const greetings = {
 };
 function EdsPage() {
   const { no, category } = Route.useSearch();
-  const [tab, setTab] = useState(TABS[4]);
+  const [tab, setTab] = useState(TABS[0]);
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<Summary[]>([]);
   const [email, setEmail] = useState("jberzins@example.lv");
   const [editingEmail, setEditingEmail] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [mailSearch, setMailSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const requestText = useRef("");
   const topic = useRef<CommunicationCategory>("chat");
   const chat = useScriptedChat([], (text, turn) => {
@@ -124,32 +127,30 @@ function EdsPage() {
     setOutbox((rows) => [...rows, s]);
   };
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="eds-shell flex min-h-screen bg-background">
       <aside
-        className={`${mobileMenu ? "fixed inset-y-0 left-0 z-30 block shadow-[var(--shadow-panel)]" : "hidden"} w-[181px] shrink-0 bg-sidebar md:block`}
+        className={`${mobileMenu ? "fixed inset-y-0 left-0 z-30 block" : "hidden"} eds-sidebar w-[177px] shrink-0 bg-sidebar md:block`}
       >
-        <div className="flex flex-col items-center px-3 pb-4 pt-4 text-center text-sidebar-foreground">
-          <div className="mb-2 grid size-9 place-items-center rounded bg-sidebar-active text-sidebar-muted">
-            <Star size={22} fill="currentColor" />
-          </div>
-          <div className="w-full border-b border-sidebar-muted/20 pb-1 text-[11px] font-bold">
-            Valsts ieņēmumu dienests
-          </div>
-          <div className="mt-2 text-[10px] leading-3 text-sidebar-muted">
+        <div className="flex h-[100px] flex-col items-center justify-center text-center text-sidebar-foreground">
+          <img src={crestAsset.url} alt="Latvijas valsts ģerbonis" className="eds-crest mb-1 h-[55px] w-[55px] object-contain" />
+          <div className="text-[9px] font-bold">Valsts ieņēmumu dienests</div>
+        </div>
+          <div className="flex h-[58px] items-center justify-center bg-secondary text-center text-[10px] leading-3 text-primary">
+            <span>
             ELEKTRONISKĀS
             <br />
             DEKLARĒŠANAS SISTĒMA
+            </span>
           </div>
-        </div>
-        <nav aria-label="EDS izvēlne">
+        <nav aria-label="EDS izvēlne" className="pt-[10px]">
           {MENU.map((m) => (
             <div
               key={m}
               className={`eds-menu ${m === "Sarakste ar VID" ? "eds-menu-active" : ""} ${m === "Atgādinājumi" ? "!text-accent-orange" : ""}`}
             >
-              <span>{m.toUpperCase()}</span>
+              <span className="flex items-center gap-2">{m === "Atgādinājumi" && <Bell size={12} />}{m.toUpperCase()}</span>
               {m === "Dokumenti" && (
-                <span className="grid size-[19px] place-items-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                <span className="grid size-[17px] place-items-center rounded-full bg-primary text-[10px] text-primary-foreground">
                   3
                 </span>
               )}
@@ -160,8 +161,8 @@ function EdsPage() {
           ))}
         </nav>
       </aside>
-      <div className="min-w-0 flex-1">
-        <header className="flex h-12 items-center gap-3 bg-primary px-[22px] text-primary-foreground">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-[42px] shrink-0 items-center gap-3 bg-primary pl-[15px] text-primary-foreground">
           <Button
             size="icon-sm"
             variant="ghost"
@@ -171,16 +172,22 @@ function EdsPage() {
           >
             <Menu />
           </Button>
-          <h1 className="text-sm font-bold">SARAKSTE AR VID</h1>
+          <h1 className="text-base font-normal">SARAKSTE AR VID</h1>
+          <div className="ml-auto flex h-full items-center">
+            <Button variant="ghost" className="h-full rounded-none px-2 text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground" onClick={() => setSearchOpen(!searchOpen)} aria-label="Meklēt EDS">
+              <Search className="size-7" /><span className="hidden text-xs sm:inline">MEKLĒT</span><ChevronDown className="size-4" />
+            </Button>
+            <span className="grid h-full w-[38px] place-items-center border-l border-primary-foreground/20" aria-label="Lietotājs"><UserRound className="size-7" fill="currentColor" /></span>
+          </div>
         </header>
         <form
           onSubmit={(e) => {
             e.preventDefault();
             setEditingEmail(false);
           }}
-          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-[22px] py-2 sm:flex sm:gap-3"
+          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-[15px] pb-[13px] pt-[21px] sm:flex sm:gap-1"
         >
-          <label htmlFor="contact-email" className="text-sm text-muted-foreground">
+          <label htmlFor="contact-email" className="mr-2 text-[10px] text-foreground">
             Jūsu saziņas e-pasts
           </label>
           <input
@@ -190,7 +197,7 @@ function EdsPage() {
             value={email}
             readOnly={!editingEmail}
             onChange={(e) => setEmail(e.target.value)}
-            className="input-vid order-3 h-6 w-full min-w-0 bg-chat-surface py-0 sm:order-none sm:w-[196px]"
+            className="input-vid order-3 h-[26px] w-full min-w-0 rounded-none bg-chat-surface px-2 py-0 text-[10px] sm:order-none sm:w-[192px]"
           />
           <Button
             variant="outline"
@@ -199,7 +206,7 @@ function EdsPage() {
             onClick={() => {
               if (!editingEmail) setEditingEmail(true);
             }}
-            className="h-6 px-3 text-primary"
+            className="h-[26px] rounded-none border-primary px-3 text-[10px] text-primary"
           >
             {editingEmail ? "Saglabāt" : "Labot"}
           </Button>
@@ -219,13 +226,14 @@ function EdsPage() {
             </Button>
           ))}
         </nav>
-        <main className="max-w-[719px] px-[22px] pb-24 pt-7">
+        {searchOpen && <div className="border-b border-border px-[15px] py-2"><input aria-label="Meklēt EDS" autoFocus placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid h-[26px] w-full max-w-[300px] rounded-none text-[10px]" /></div>}
+        <main className={`flex-1 ${tab === TABS[4] ? "w-full max-w-[719px] px-[15px] pb-8 pt-7" : "pt-[7px]"}`}>
           {tab !== TABS[4] ? (
             <>
-              <h2 className="mb-5 text-sm font-bold text-primary">{tab}</h2>
-              {tab === "Nosūtne" && outbox.length ? (
-                <div className="space-y-2">
-                  {outbox.map((s, i) => (
+              <input aria-label="Meklēt vēstulēs" placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid mb-[7px] ml-[15px] h-[26px] w-[192px] rounded-none px-2 py-0 text-[10px]" />
+              {tab === "Nosūtne" && outbox.some((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())) ? (
+                <div className="space-y-2 px-[15px]">
+                  {outbox.filter((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())).map((s, i) => (
                     <div key={i} className="border-b border-border py-3">
                       <p className="text-sm font-bold text-primary">{s.tema}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -236,7 +244,7 @@ function EdsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Nav vēstuļu.</p>
+                <p className="border-y border-border pl-[15px] text-[10px] leading-[15px] text-foreground">Nav atrasts neviens ziņojums</p>
               )}
             </>
           ) : (
@@ -332,8 +340,15 @@ function EdsPage() {
             </>
           )}
         </main>
+        <footer className="eds-footer min-h-[84px] shrink-0 bg-secondary px-[15px] py-3 text-[10px] text-primary">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <a href="tel:67120000" className="flex items-center gap-1 font-bold"><Phone size={15} fill="currentColor" />67120000</a>
+            {["Lietošanas noteikumi", "Personas datu apstrāde VID", "Sīkdatņu izmantošanas politika"].map((label) => <span key={label} className="flex items-center gap-1 font-bold underline"><UserRoundPen size={17} fill="currentColor" />{label}</span>)}
+            <img src={fundingAsset.url} alt="Nacionālais attīstības plāns 2020 un Eiropas Savienības Eiropas Reģionālās attīstības fonds — Ieguldījums tavā nākotnē" className="h-[50px] w-[222px] object-contain" />
+          </div>
+          <p className="mt-[-2px] text-[9px] text-foreground">Versija 28.0.60.7, <Link to="/" className="text-primary underline">www.vid.gov.lv</Link></p>
+        </footer>
       </div>
-      <ViewSwitch onReset={reset} />
     </div>
   );
 }
