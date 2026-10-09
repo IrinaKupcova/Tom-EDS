@@ -9,3 +9,6 @@
 - [x] Verify direct answers, follow-up questions, specialist submission and public conversation continuation.
 - [x] Show immediate specialist handoff confirmation with the standard 10-working-day response expectation.
 - [x] Add proactive guidance for annual income declaration refund timing.
+- [ ] Update public VID contacts, combine assistant information and highlight communication response times.
+- [ ] Embed public chat in the communication section and add customs assistant, specialist and official customs-point choices.
+- [ ] Verify public communication flows and preserve EDS appearance.
