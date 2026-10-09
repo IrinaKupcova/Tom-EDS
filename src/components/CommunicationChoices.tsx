@@ -48,7 +48,7 @@ export function CommunicationChoices({
           )}
           <p className="mt-1 leading-5 text-muted-foreground">
             {publicSite
-              ? "Atbildu uz jautājumiem, sniedzu instrukcijas un palīdzu sagatavot ziņu VID speciālistam."
+              ? "Atbildu uz jautājumiem, sniedzu instrukcijas un palīdzu sagatavot ziņu VID speciālistam. Ja nepieciešama Jūsu identificēšana, šo pašu sarunu turpināsim EDS."
               : "Atbildu uz jautājumiem un sameklēju informāciju par Jums iestādes informācijas sistēmās. Tikai sarežģītus jautājumus nododu speciālistam. Šeit datu saņemšana tiek demonstrēta."}
           </p>
         </div>
