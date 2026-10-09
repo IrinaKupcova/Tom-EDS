@@ -7,3 +7,5 @@
 - [ ] Replace EDS Toms branding with virtual-assistant identification throughout.
 - [ ] Demonstrate personalized information retrieval and direct replies; reserve specialist forwarding for illustrative complex cases.
 - [ ] Verify direct answers, follow-up questions, specialist submission and public conversation continuation.
+- [ ] Show immediate specialist handoff confirmation with the standard 10-working-day response expectation.
+- [ ] Add proactive guidance for annual income declaration refund timing.
