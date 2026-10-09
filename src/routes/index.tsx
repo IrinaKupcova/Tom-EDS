@@ -1,14 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Accessibility,
   ArrowRight,
+  ArrowLeft,
+  Building2,
   ChevronDown,
   Globe,
   Mail,
   MapPin,
   Mouse,
   Phone,
+  MessageSquareMore,
+  FilePlus2,
   Search,
   X,
 } from "lucide-react";
@@ -22,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { publicReply, saveConversation, clearConversation } from "@/lib/toms";
 import crestAsset from "@/assets/vid-crest.asset.json";
 import tomsAsset from "@/assets/toms-portrait.asset.json";
+import { CustomsPoints } from "@/components/CustomsPoints";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -87,6 +92,18 @@ function VidPage() {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [chatCategory, setChatCategory] = useState<CommunicationCategory>("chat");
+  const [customsView, setCustomsView] = useState<"choices" | "assistant" | "points">("choices");
+  const [sectionVisible, setSectionVisible] = useState(false);
+  const communicationSection = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const section = communicationSection.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setSectionVisible(entry?.isIntersecting ?? false);
+    });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
   const navigate = useNavigate();
   const chat = useScriptedChat(
     [{ from: "toms", text: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?" }],
@@ -98,7 +115,9 @@ function VidPage() {
       return;
     }
     setChatCategory(category);
+    setCustomsView("choices");
     setOpen(true);
+    communicationSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     chat.reset([
       {
         from: "toms",
@@ -114,9 +133,34 @@ function VidPage() {
     navigate({ to: "/eds", search: { no: "toms" } });
   };
   const ask = (text: string) => {
+    setChatCategory("chat");
     setOpen(true);
     chat.send(text);
   };
+  const chatSurface = (
+    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-panel)]" aria-label="Toms — VID virtuālais asistents">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
+        <div className="flex items-center gap-3">
+          <TomsAvatar size={36} />
+          <div>
+            <h3 className="text-sm font-bold">Toms</h3>
+            <p className="text-xs">VID virtuālais asistents{chatCategory === "customs" ? " · muitas jautājumi" : ""}</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)} aria-label="Aizvērt Tomu"><X size={18} /></Button>
+      </div>
+      <TomsChat
+        compact
+        messages={chat.messages}
+        busy={chat.busy}
+        onSend={chat.send}
+        onAuth={auth}
+        suggestions={chatCategory === "customs"
+          ? ["Pasta sūtījumi", "Vai jāmaksā muita par paku?"]
+          : ["Kad atmaksās manu nodokļu pārmaksu?", "Klientu apkalpošanas darba laiks", "Vai jāmaksā muita par paku?"]}
+      />
+    </section>
+  );
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -246,7 +290,7 @@ function VidPage() {
           </a>
         </div>
       </section>
-      <section id="sazina" className="border-t border-border bg-secondary py-9">
+      <section ref={communicationSection} id="sazina" className="border-t border-border bg-secondary py-9">
         <div className="mx-auto max-w-[940px] px-5">
           <h2 className="text-center text-2xl font-bold">Saziņa ar VID</h2>
           <p className="mb-8 mt-3 text-center text-sm text-muted-foreground">
@@ -255,6 +299,24 @@ function VidPage() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="min-w-0">
               <CommunicationChoices onChoose={choose} publicSite />
+              {open && chatCategory === "chat" && <div className="mt-5">{chatSurface}</div>}
+              {open && chatCategory === "customs" && (
+                <div className="mt-5 border-t border-border pt-5">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h3 className="text-base font-bold text-primary">Saziņa par muitas jautājumiem</h3>
+                    <Button variant="ghost" size="icon-sm" aria-label="Aizvērt muitas saziņu" onClick={() => setOpen(false)}><X size={18} /></Button>
+                  </div>
+                  <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Muitas saziņas iespējas">
+                    <Button variant={customsView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("assistant")}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
+                    <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "doc" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
+                    <Button variant={customsView === "points" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("points")}><Building2 size={17} /> Muitas punkti</Button>
+                  </div>
+                  {customsView === "choices" && <p className="text-sm font-bold text-primary">Virtuālais asistents — uzreiz, 24/7 · Speciālista atbilde — 1–10 darba dienās</p>}
+                  {customsView !== "choices" && <Button variant="ghost" size="sm" onClick={() => setCustomsView("choices")} className="mb-3"><ArrowLeft size={15} /> Atpakaļ</Button>}
+                  {customsView === "assistant" && chatSurface}
+                  {customsView === "points" && <CustomsPoints />}
+                </div>
+              )}
             </div>
             <div id="kontakti">
               <h3 className="mb-3 text-sm font-bold text-primary">Kontakti</h3>
@@ -272,58 +334,13 @@ function VidPage() {
                   Talejas iela 1, Rīga, LV-1978
                 </li>
               </ul>
-              <div className="mt-6 border-t border-chat-border pt-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-chat-primary">
-                  <TomsAvatar size={24} />
-                  Toms
-                </div>
-                <p className="mt-2 text-xs leading-4 text-chat-primary">
-                  Atbildu uzreiz. Ja jautājums ir personalizēts un nepieciešama autentifikācija —
-                  saruna turpinās EDS.
-                </p>
-              </div>
+              <Button variant="outline" className="mt-6 h-auto whitespace-normal border-primary px-4 py-3 text-primary" aria-disabled="true"><Building2 size={18} /> Klientu apkalpošana</Button>
             </div>
           </div>
         </div>
       </section>
-      <div className="fixed bottom-5 right-4 z-50 w-[350px] max-w-[calc(100vw-2rem)]">
-        {open ? (
-          <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-panel)]">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
-              <div className="flex items-center gap-3">
-                <TomsAvatar size={32} />
-                <div>
-                  <h2 className="text-sm font-bold">Toms</h2>
-                  <p className="text-xs">VID virtuālais asistents</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setOpen(false)}
-                aria-label="Aizvērt Tomu"
-              >
-                <X size={18} />
-              </Button>
-            </div>
-            <TomsChat
-              compact
-              messages={chat.messages}
-              busy={chat.busy}
-              onSend={chat.send}
-              onAuth={auth}
-              suggestions={
-                chatCategory === "customs"
-                  ? ["Pasta sūtījumi", "Vai jāmaksā muita par paku?"]
-                  : [
-                      "Kad atmaksās manu nodokļu pārmaksu?",
-                      "Klientu apkalpošanas darba laiks",
-                      "Vai jāmaksā muita par paku?",
-                    ]
-              }
-            />
-          </section>
-        ) : (
+      {!sectionVisible && chatCategory !== "customs" && <div className="fixed bottom-5 right-4 z-50 w-[350px] max-w-[calc(100vw-2rem)]">
+        {open ? chatSurface : (
           <Button
             onClick={() => setOpen(true)}
             className="relative ml-auto h-auto w-full whitespace-normal rounded-lg px-5 py-3 pr-12 text-left text-sm font-normal leading-5 shadow-[var(--shadow-panel)]"
@@ -334,7 +351,7 @@ function VidPage() {
             </span>
           </Button>
         )}
-      </div>
+      </div>}
       <ViewSwitch
         onReset={() => {
           chat.reset([
