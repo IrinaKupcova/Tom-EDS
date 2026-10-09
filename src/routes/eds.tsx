@@ -83,7 +83,8 @@ function EdsPage() {
       topic.current === "customs"
         ? `Muitas jautājums: ${requestText.current}`
         : requestText.current;
-    const continuingSummary = chat.messages.at(-1)?.action === "summary";
+    const complexPattern = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/i;
+    const continuingSummary = turn > 0 && complexPattern.test(requestText.current) && !complexPattern.test(text);
     return edsReply(combined, turn, text, continuingSummary);
   });
   const choose = (c: CommunicationCategory) => {
@@ -269,12 +270,12 @@ function EdsPage() {
                 <section role="status" className="border-t border-border py-5">
                   <CheckCircle2 className="mb-3 text-chat-primary" />
                   <h3 className="text-lg font-bold text-primary">
-                    Iesniegums sagatavots un nosūtīts prototipā
+                     Paldies! Jūsu ziņa ir nodota speciālistam.
                   </h3>
                   <p className="mt-3 text-sm">Tēma: {sent.tema}</p>
                   <p className="mt-1 text-sm">Adresāts: {sent.struktura}</p>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Šī ir demonstrācija — VID iesniegumu nesaņem.
+                     Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.
                   </p>
                   <Button variant="outline" className="mt-4" onClick={() => setTab("Nosūtne")}>
                     Skatīt nosūtnē
