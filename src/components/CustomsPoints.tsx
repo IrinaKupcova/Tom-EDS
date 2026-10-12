@@ -8,7 +8,7 @@ const customsGroups = [
   { region: "Zemgale un Vidzeme", points: ["Jelgavas muitas kontroles punkts", "Valmieras muitas kontroles punkts"] },
 ];
 
-export function CustomsPoints() {
+export function CustomsPoints({ onWrite }: { onWrite?: (point: string) => void }) {
   return (
     <section aria-label="VID muitas punkti">
       <h4 className="mb-4 flex items-center gap-2 text-base font-bold text-primary"><Building2 size={19} /> Muitas kontroles punkti</h4>
@@ -17,7 +17,7 @@ export function CustomsPoints() {
           <div key={region}>
             <h5 className="border-b border-border pb-2 text-sm font-bold">{region}</h5>
             <ul className="divide-y divide-border">
-              {points.map((point) => <li key={point} className="py-2 text-sm leading-5">{point}</li>)}
+              {points.map((point) => <li key={point} className="flex items-center justify-between gap-2 py-2 text-sm leading-5"><span>{point}</span>{onWrite && <Button variant="link" size="sm" className="h-auto shrink-0 px-0" onClick={() => onWrite(point)}>Rakstīt</Button>}</li>)}
             </ul>
           </div>
         ))}
