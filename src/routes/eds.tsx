@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
+import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
 import crestAsset from "@/assets/vid-crest.asset.json";
 import fundingAsset from "@/assets/eds-funding.asset.json";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
@@ -20,12 +20,13 @@ import {
 export const Route = createFileRoute("/eds")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { no?: string | undefined; category?: CommunicationCategory | undefined } => ({
+  ): { no?: string | undefined; category?: CommunicationCategory | undefined; point?: string | undefined } => ({
     no: typeof s["no"] === "string" ? s["no"] : undefined,
     category:
-      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs"
+      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs" || s["category"] === "history"
         ? s["category"]
         : undefined,
+    point: typeof s["point"] === "string" ? s["point"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -65,8 +66,9 @@ const greetings = {
     "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
 };
 function EdsPage() {
-  const { no, category } = Route.useSearch();
-  const [tab, setTab] = useState(TABS[0]);
+  const { no, category, point } = Route.useSearch();
+  const [tab, setTab] = useState(TABS[4]);
+  const [signedIn, setSignedIn] = useState(no !== "toms");
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<Summary[]>([]);
@@ -93,9 +95,11 @@ function EdsPage() {
     setSent(null);
     requestText.current = "";
     topic.current = c;
-    chat.reset(c === "doc" ? [] : [{ from: "toms", text: greetings[c] }]);
+    if (c === "doc" || c === "history") chat.reset([]);
+    else chat.reset([{ from: "toms", text: greetings[c] }]);
   };
-  useEffect(() => {
+  const continueConversation = () => {
+    setSignedIn(true);
     if (no === "toms") {
       const previous = loadConversation();
       if (previous) {
@@ -106,17 +110,19 @@ function EdsPage() {
         setCat(c);
         setTab(TABS[4]);
         chat.reset([
-          ...previous.filter((m) => m.action !== "auth"),
-          { from: "system", text: "Identifikācija demonstrēta · saruna turpinās EDS" },
+          ...previous.filter((m) => m.action !== "auth" && !m.text.toLowerCase().includes("identifik")),
           ...edsReply(lastUser, 0),
         ]);
         chat.turn.current = 1;
         clearConversation();
       }
-    } else if (category) choose(category);
+    }
+  };
+  useEffect(() => {
+    if (no !== "toms" && category) choose(category);
     // Search changes are entry points, not changes to the active conversation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [no, category]);
+  }, [no, category, point]);
   const reset = () => {
     setCat(null);
     setSent(null);
@@ -231,7 +237,14 @@ function EdsPage() {
         </nav>
         {searchOpen && <div className="border-b border-border px-[15px] py-2"><input aria-label="Meklēt EDS" autoFocus placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid h-[26px] w-full max-w-[300px] rounded-none text-[10px]" /></div>}
         <main className={`flex-1 ${tab === TABS[4] ? "w-full max-w-[719px] px-[15px] pb-8 pt-7" : "pt-[7px]"}`}>
-          {tab !== TABS[4] ? (
+          {!signedIn ? (
+            <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
+              <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
+              <p className="mb-5 text-sm leading-6">Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu.</p>
+              <Button className="w-full" onClick={continueConversation}>Pieslēgties EDS</Button>
+              <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
+            </section>
+          ) : tab !== TABS[4] ? (
             <>
               <input aria-label="Meklēt vēstulēs" placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid mb-[7px] ml-[15px] h-[26px] w-[192px] rounded-none px-2 py-0 text-[10px]" />
               {tab === "Nosūtne" && outbox.some((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())) ? (
@@ -283,8 +296,10 @@ function EdsPage() {
                 </section>
               ) : cat === null ? (
                 <CommunicationChoices onChoose={choose} />
+              ) : cat === "history" ? (
+                <CorrespondenceHistory outbox={outbox} />
               ) : cat === "doc" ? (
-                <DocForm onSent={submit} onCancel={reset} />
+                <DocForm onSent={submit} onCancel={reset} {...(point ? { recipient: point } : {})} />
               ) : (
                 <>
                   <section className="overflow-hidden rounded-lg border border-border">
@@ -373,8 +388,17 @@ const formats = [
   "xhtml",
   "zip",
 ];
-function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel: () => void }) {
-  const [type, setType] = useState("");
+function CorrespondenceHistory({ outbox }: { outbox: Summary[] }) {
+  const rows = [
+    { tema: "Gada ienākumu deklarācijas precizējums", veids: "Iesniegta vēstule", status: "Iesniegts", termins: "Paredzamais atbildes laiks — līdz 10 darba dienām" },
+    { tema: "Nodokļu aprēķina apstrīdēšana", veids: "Saruna nodota speciālistam", status: "Izskatīšanā", termins: "Sarežģīts jautājums — atbilde līdz 30 dienām" },
+    ...outbox.map((item) => ({ tema: item.tema, veids: "Iesniegta vēstule", status: "Iesniegts", termins: "Paredzamais atbildes laiks — līdz 10 darba dienām" })),
+  ];
+  return <section aria-labelledby="history-title"><h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3><p className="mb-5 text-xs text-muted-foreground">Sarunas un VID nosūtīto vēstuļu izskatīšanas statuss</p><div className="divide-y divide-border border-y border-border">{rows.map((row, index) => <article key={`${row.tema}-${index}`} className="grid gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><p className="text-sm font-bold text-primary">{row.tema}</p><p className="mt-1 text-xs text-muted-foreground">{row.veids}</p><p className="mt-2 text-xs">{row.termins}</p></div><span className="w-fit rounded-full bg-chat-accent px-3 py-1 text-xs font-bold text-chat-primary">{row.status}</span></article>)}</div></section>;
+}
+
+function DocForm({ onSent, onCancel, recipient }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string }) {
+  const [type, setType] = useState(recipient ? "Muitas jautājums" : "");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   return (
@@ -385,7 +409,7 @@ function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel:
         onSent({
           kategorija: "Dokumenta iesniegšana",
           tema: type,
-          struktura: "VID speciālists",
+          struktura: recipient ?? "VID speciālists",
           teksts: text,
         });
       }}
@@ -394,7 +418,7 @@ function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel:
         Iesniegt dokumentu vai rakstīt speciālistam
       </h3>
       <p className="mb-4 mt-1 text-xs text-muted-foreground">
-        Aizpildiet paskaidrojumu un, ja nepieciešams, pievienojiet dokumentu.
+        {recipient ? `Adresāts: ${recipient}. ` : ""}Aizpildiet paskaidrojumu un, ja nepieciešams, pievienojiet dokumentu.
       </p>
       <label className="mb-4 block text-sm text-primary">
         Dokumenta veids<span className="text-destructive">*</span>
@@ -405,7 +429,7 @@ function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel:
           className="input-vid mt-1 h-9 w-full"
         >
           <option value="">— izvēlieties —</option>
-          {["Iesniegums", "Paskaidrojums", "Pilnvara", "Cits dokuments"].map((s) => (
+          {["Iesniegums", "Paskaidrojums", "Pilnvara", "Muitas jautājums", "Cits dokuments"].map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>

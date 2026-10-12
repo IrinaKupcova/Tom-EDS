@@ -16,3 +16,4 @@
 - Scope mailbox-shell tokens and layout overrides to EDS so screenshot fidelity changes do not alter the shared public VID interface.
 - Keep EDS simulated replies intent-driven using the latest question and accumulated context for specialist summaries; illustrative escalation scenarios are not production classification rules.
 - Keep public communication options behind the publicSite variant; use section visibility to move the shared public chat between its corner and inline positions without resetting the conversation or altering EDS.
+- Keep the public-to-EDS handoff simulated in session storage, with a visible prototype sign-in step before restoring the same conversation.

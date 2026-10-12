@@ -1,4 +1,5 @@
 import { Building2, ExternalLink } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 
 const customsGroups = [
@@ -17,7 +18,7 @@ export function CustomsPoints() {
           <div key={region}>
             <h5 className="border-b border-border pb-2 text-sm font-bold">{region}</h5>
             <ul className="divide-y divide-border">
-              {points.map((point) => <li key={point} className="py-2 text-sm leading-5">{point}</li>)}
+              {points.map((point) => <li key={point} className="flex items-center justify-between gap-2 py-2 text-sm leading-5"><span>{point}</span><Button variant="link" size="sm" asChild className="h-auto shrink-0 px-0"><Link to="/eds" search={{ category: "doc", point }}>Rakstīt</Link></Button></li>)}
             </ul>
           </div>
         ))}

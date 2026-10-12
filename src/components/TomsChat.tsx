@@ -15,7 +15,6 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import crestAsset from "@/assets/vid-crest.asset.json";
 import tomsAsset from "@/assets/toms-portrait.asset.json";
 
 export function TomsAvatar({ size = 36, virtualAssistant = false }: { size?: number; virtualAssistant?: boolean }) {
@@ -25,7 +24,7 @@ export function TomsAvatar({ size = 36, virtualAssistant = false }: { size?: num
       style={{ width: size, height: size, fontSize: size * 0.34 }}
       aria-hidden
     >
-      {virtualAssistant ? <img src={crestAsset.url} alt="" className="h-4/5 w-4/5 object-contain" /> : <img src={tomsAsset.url} alt="" className="size-full rounded-full object-cover" />}
+      <img src={tomsAsset.url} alt="" className="size-full rounded-full object-cover" />
     </div>
   );
 }

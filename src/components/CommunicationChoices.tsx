@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Box, FilePlus2, MessageSquareMore, RotateCcw } from "lucide-react";
+import { Box, FilePlus2, History, MessageSquareMore, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TomsAvatar } from "@/components/TomsChat";
 
-export type CommunicationCategory = "chat" | "doc" | "customs";
+export type CommunicationCategory = "chat" | "doc" | "customs" | "history";
 export const choices = [
   {
     id: "chat" as const,
@@ -25,6 +25,13 @@ export const choices = [
     desc: "Pasta sūtījumi, muitas jautājumi un saziņa ar muitas punktu",
     icon: Box,
     ai: true,
+  },
+  {
+    id: "history" as const,
+    title: "Sarakstes vēsture",
+    desc: "Sarunas, iesniegtās vēstules un to izskatīšanas statuss",
+    icon: History,
+    ai: false,
   },
 ];
 
@@ -54,7 +61,7 @@ export function CommunicationChoices({
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {choices.map(({ id, title, desc, icon: Icon, ai }) => (
+        {choices.filter(({ id }) => !publicSite || id !== "history").map(({ id, title, desc, icon: Icon, ai }) => (
           <Button
             key={id}
             variant="outline"
@@ -66,16 +73,16 @@ export function CommunicationChoices({
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
-              {(!publicSite || id !== "customs") && <span
+              {ai && (!publicSite || id !== "customs") && <span
                 className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${ai ? "bg-chat-accent text-chat-primary" : "bg-secondary text-muted-foreground"}`}
               >
-                {ai ? (publicSite ? "Saziņu nodrošina virtuālais asistents" : "Virtuālais asistents") : "Manuāla apstrāde"}
+                {publicSite ? "Saziņu nodrošina virtuālais asistents" : "Virtuālais asistents"}
               </span>}
               <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">
                 {desc}
               </span>
               <span className={publicSite ? "mt-3 flex items-center gap-1.5 text-sm font-bold text-primary" : "mt-2 block text-[11px] text-primary"}>
-                {publicSite && id === "customs" ? "Asistents · speciālists · muitas punkti" : ai ? "Saziņa uzreiz · 24/7" : "Atbilde 1–10 darba dienās"}
+                {publicSite && id === "customs" ? "Asistents · speciālists · muitas punkti" : id === "history" ? "Skatīt statusus" : ai ? "Saziņa uzreiz · 24/7" : "Atbilde 1–10 darba dienās"}
               </span>
             </span>
           </Button>
