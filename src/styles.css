@@ -390,6 +390,10 @@ body {
 }
 .eds-sidebar { border-right: 1px solid var(--border); }
 .eds-crest { filter: grayscale(1); opacity: 0.65; }
+.eds-shell .toms-avatar {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
 .eds-shell .eds-menu {
   height: 34px;
   min-height: 34px;
