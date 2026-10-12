@@ -109,7 +109,7 @@ function EdsPage() {
         setCat(c);
         setTab(TABS[4]);
         chat.reset([
-          ...previous.filter((m) => m.action !== "auth"),
+          ...previous.filter((m) => m.action !== "auth" && !m.text.toLowerCase().includes("identifik")),
           ...edsReply(lastUser, 0),
         ]);
         chat.turn.current = 1;
@@ -298,7 +298,7 @@ function EdsPage() {
               ) : cat === "history" ? (
                 <CorrespondenceHistory outbox={outbox} />
               ) : cat === "doc" ? (
-                <DocForm onSent={submit} onCancel={reset} recipient={point} />
+                <DocForm onSent={submit} onCancel={reset} {...(point ? { recipient: point } : {})} />
               ) : (
                 <>
                   <section className="overflow-hidden rounded-lg border border-border">
