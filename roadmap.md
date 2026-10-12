@@ -12,9 +12,9 @@
 - [x] Update public VID contacts, combine assistant information and highlight communication response times.
 - [x] Embed public chat in the communication section and add customs assistant, specialist and official customs-point choices.
 - [x] Verify public communication flows and preserve EDS appearance.
-- [ ] Add a simulated EDS sign-in step before continuing the same public-site conversation.
-- [ ] Open EDS on “Rakstīt jaunu vēstuli” by default and remove identification text after sign-in.
-- [ ] Use Toms’s portrait for the EDS assistant and remove the “Manuāla apstrāde” label.
-- [ ] Add EDS correspondence history with submission statuses and expected response times.
-- [ ] Let users address a message directly to a selected customs point.
-- [ ] Verify both VID and EDS views and the complete handoff flow.
+- [x] Add a simulated EDS sign-in step before continuing the same public-site conversation.
+- [x] Open EDS on “Rakstīt jaunu vēstuli” by default and remove identification text after sign-in.
+- [x] Use Toms’s portrait for the EDS assistant and remove the “Manuāla apstrāde” label.
+- [x] Add EDS correspondence history with submission statuses and expected response times.
+- [x] Let users address a message directly to a selected customs point.
+- [x] Verify both VID and EDS views and the complete handoff flow.
