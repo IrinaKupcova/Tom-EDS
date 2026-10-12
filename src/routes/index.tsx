@@ -314,7 +314,7 @@ function VidPage() {
                   {customsView === "choices" && <p className="text-sm font-bold text-primary">Virtuālais asistents — uzreiz, 24/7 · Speciālista atbilde — 1–10 darba dienās</p>}
                   {customsView !== "choices" && <Button variant="ghost" size="sm" onClick={() => setCustomsView("choices")} className="mb-3"><ArrowLeft size={15} /> Atpakaļ</Button>}
                   {customsView === "assistant" && chatSurface}
-                  {customsView === "points" && <CustomsPoints onWrite={(point) => navigate({ to: "/eds", search: { category: "doc", point } })} />}
+                  {customsView === "points" && <CustomsPoints />}
                 </div>
               )}
             </div>
