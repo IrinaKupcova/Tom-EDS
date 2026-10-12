@@ -95,7 +95,8 @@ function EdsPage() {
     setSent(null);
     requestText.current = "";
     topic.current = c;
-    chat.reset(c === "doc" || c === "history" ? [] : [{ from: "toms", text: greetings[c] }]);
+    if (c === "doc" || c === "history") chat.reset([]);
+    else chat.reset([{ from: "toms", text: greetings[c] }]);
   };
   const continueConversation = () => {
     setSignedIn(true);
