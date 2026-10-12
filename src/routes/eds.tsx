@@ -95,7 +95,7 @@ function EdsPage() {
     setSent(null);
     requestText.current = "";
     topic.current = c;
-    chat.reset(c === "doc" ? [] : [{ from: "toms", text: greetings[c] }]);
+    chat.reset(c === "doc" || c === "history" ? [] : [{ from: "toms", text: greetings[c] }]);
   };
   const continueConversation = () => {
     setSignedIn(true);
@@ -387,8 +387,17 @@ const formats = [
   "xhtml",
   "zip",
 ];
-function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel: () => void }) {
-  const [type, setType] = useState("");
+function CorrespondenceHistory({ outbox }: { outbox: Summary[] }) {
+  const rows = [
+    { tema: "Gada ienākumu deklarācijas precizējums", veids: "Iesniegta vēstule", status: "Iesniegts", termins: "Paredzamais atbildes laiks — līdz 10 darba dienām" },
+    { tema: "Nodokļu aprēķina apstrīdēšana", veids: "Saruna nodota speciālistam", status: "Izskatīšanā", termins: "Sarežģīts jautājums — atbilde līdz 30 dienām" },
+    ...outbox.map((item) => ({ tema: item.tema, veids: "Iesniegta vēstule", status: "Iesniegts", termins: "Paredzamais atbildes laiks — līdz 10 darba dienām" })),
+  ];
+  return <section aria-labelledby="history-title"><h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3><p className="mb-5 text-xs text-muted-foreground">Sarunas un VID nosūtīto vēstuļu izskatīšanas statuss</p><div className="divide-y divide-border border-y border-border">{rows.map((row, index) => <article key={`${row.tema}-${index}`} className="grid gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><p className="text-sm font-bold text-primary">{row.tema}</p><p className="mt-1 text-xs text-muted-foreground">{row.veids}</p><p className="mt-2 text-xs">{row.termins}</p></div><span className="w-fit rounded-full bg-chat-accent px-3 py-1 text-xs font-bold text-chat-primary">{row.status}</span></article>)}</div></section>;
+}
+
+function DocForm({ onSent, onCancel, recipient }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string }) {
+  const [type, setType] = useState(recipient ? "Muitas jautājums" : "");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   return (
@@ -399,7 +408,7 @@ function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel:
         onSent({
           kategorija: "Dokumenta iesniegšana",
           tema: type,
-          struktura: "VID speciālists",
+          struktura: recipient ?? "VID speciālists",
           teksts: text,
         });
       }}
@@ -408,7 +417,7 @@ function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel:
         Iesniegt dokumentu vai rakstīt speciālistam
       </h3>
       <p className="mb-4 mt-1 text-xs text-muted-foreground">
-        Aizpildiet paskaidrojumu un, ja nepieciešams, pievienojiet dokumentu.
+        {recipient ? `Adresāts: ${recipient}. ` : ""}Aizpildiet paskaidrojumu un, ja nepieciešams, pievienojiet dokumentu.
       </p>
       <label className="mb-4 block text-sm text-primary">
         Dokumenta veids<span className="text-destructive">*</span>
@@ -419,7 +428,7 @@ function DocForm({ onSent, onCancel }: { onSent: (s: Summary) => void; onCancel:
           className="input-vid mt-1 h-9 w-full"
         >
           <option value="">— izvēlieties —</option>
-          {["Iesniegums", "Paskaidrojums", "Pilnvara", "Cits dokuments"].map((s) => (
+          {["Iesniegums", "Paskaidrojums", "Pilnvara", "Muitas jautājums", "Cits dokuments"].map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
