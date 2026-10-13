@@ -320,7 +320,7 @@ function VidPage() {
                     <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "doc", no: "auth" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
                     <Button variant={customsView === "points" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("points")}><Building2 size={17} /> Muitas punkti</Button>
                   </div>
-                  {customsView === "choices" && <p className="text-sm font-bold text-primary">Virtuālais asistents — uzreiz, 24/7 · Speciālista atbilde — 1–10 darba dienās</p>}
+                  {customsView === "choices" && <div className="flex flex-wrap gap-2 text-xs font-bold text-primary-foreground"><span className="rounded bg-primary px-2 py-1">Virtuālais asistents — uzreiz, 24/7</span><span className="rounded bg-primary px-2 py-1">Speciālista atbilde — līdz 10 darba dienām</span></div>}
                   {customsView !== "choices" && <Button variant="ghost" size="sm" onClick={() => setCustomsView("choices")} className="mb-3"><ArrowLeft size={15} /> Atpakaļ</Button>}
                   {customsView === "assistant" && chatSurface}
                   {customsView === "points" && <CustomsPoints requireAuth />}

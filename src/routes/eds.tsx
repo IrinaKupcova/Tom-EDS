@@ -75,6 +75,7 @@ function EdsPage() {
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<Summary[]>([]);
+  const [conversations, setConversations] = useState<Msg[][]>([]);
   const [email, setEmail] = useState("jberzins@example.lv");
   const [editingEmail, setEditingEmail] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -95,6 +96,9 @@ function EdsPage() {
     return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]);
   });
   const choose = (c: CommunicationCategory) => {
+    if (chat.messages.some((m) => m.from === "user")) {
+      setConversations((rows) => [...rows, chat.messages]);
+    }
     setTab(TABS[4]);
     setCat(c);
     setSent(null);
@@ -129,6 +133,9 @@ function EdsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [no, category, point]);
   const reset = () => {
+    if (chat.messages.some((m) => m.from === "user")) {
+      setConversations((rows) => [...rows, chat.messages]);
+    }
     setCat(null);
     setSent(null);
     setTab(TABS[4]);
@@ -302,7 +309,7 @@ function EdsPage() {
               ) : cat === null ? (
                 <CommunicationChoices onChoose={choose} />
               ) : cat === "history" ? (
-                <CorrespondenceHistory outbox={outbox} />
+                <CorrespondenceHistory outbox={outbox} conversations={conversations} />
               ) : cat === "doc" ? (
                 <DocForm onSent={submit} onCancel={reset} {...(point ? { recipient: point } : {})} />
               ) : (
@@ -394,27 +401,52 @@ const formats = [
   "xhtml",
   "zip",
 ];
-function CorrespondenceHistory({ outbox }: { outbox: Summary[] }) {
-  const rows = [
-    { tema: "Gada ienākumu deklarācijas precizējums", veids: "Iesniegta vēstule", status: "Iesniegts", termins: "Paredzamais atbildes laiks — līdz 10 darba dienām" },
-    { tema: "Nodokļu aprēķina apstrīdēšana", veids: "Saruna nodota speciālistam", status: "Izskatīšanā", termins: "Sarežģīts jautājums — atbilde līdz 30 dienām" },
-    ...outbox.map((item) => ({ tema: item.tema, veids: "Iesniegta vēstule", status: "Iesniegts", termins: "Paredzamais atbildes laiks — līdz 10 darba dienām" })),
-  ];
-  return <section aria-labelledby="history-title"><h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3><p className="mb-5 text-xs text-muted-foreground">Sarunas un VID nosūtīto vēstuļu izskatīšanas statuss</p><div className="divide-y divide-border border-y border-border">{rows.map((row, index) => <article key={`${row.tema}-${index}`} className="grid gap-2 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><p className="text-sm font-bold text-primary">{row.tema}</p><p className="mt-1 text-xs text-muted-foreground">{row.veids}</p><p className="mt-2 text-xs">{row.termins}</p></div><span className="w-fit rounded-full bg-chat-accent px-3 py-1 text-xs font-bold text-chat-primary">{row.status}</span></article>)}</div></section>;
+function CorrespondenceHistory({ outbox, conversations }: { outbox: Summary[]; conversations: Msg[][] }) {
+  return <section aria-labelledby="history-title">
+    <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
+    <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules</p>
+    <div className="mb-5 flex flex-wrap gap-2 text-xs font-bold text-primary-foreground">
+      <span className="rounded bg-primary px-2 py-1">Parastos gadījumos — 10 darba dienas</span>
+      <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — 30 darba dienas</span>
+    </div>
+    <div className="divide-y divide-border border-y border-border">
+      {conversations.map((messages, index) => <article key={`chat-${index}`} className="py-4">
+        <h4 className="text-sm font-bold text-primary">{messages.find((m) => m.from === "user")?.text}</h4>
+        <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Saruna ar virtuālo asistentu</summary>
+          <div className="mt-3 space-y-3">{messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
+        </details>
+      </article>)}
+      {outbox.map((item, index) => <article key={`letter-${index}`} className="py-4">
+        <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
+        <p className="mt-1 text-xs text-muted-foreground">Speciālistam pārsūtīta vēstule · {item.struktura}</p>
+        <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>
+      </article>)}
+      {!conversations.length && !outbox.length && <p className="py-4 text-sm text-muted-foreground">Nav sarunu vai speciālistam pārsūtītu vēstuļu.</p>}
+    </div>
+  </section>;
 }
+
+const documentSubtypes: Record<string, string[]> = {
+  "Iesniegums": ["Iesniegums par nodokļu atmaksu", "Iesniegums par nodokļu parāda samaksas termiņa pagarinājumu", "Iesniegums par nodokļu maksājumu sadalīšanu termiņos", "Iesniegums par nodokļu aprēķina pārskatīšanu", "Cits iesniegums"],
+  "Paskaidrojums": ["Paskaidrojums par deklarācijas datiem", "Paskaidrojums par ienākumiem", "Paskaidrojums par nodokļu maksājumiem", "Cits paskaidrojums"],
+  "Pilnvara": ["Pilnvara pārstāvībai VID", "Pilnvara muitas formalitāšu kārtošanai", "Pilnvaras atsaukums", "Cita pilnvara"],
+  "Muitas jautājums": ["Par pasta sūtījuma muitošanu", "Par muitas deklarācijas precizēšanu", "Par muitas maksājumu atmaksu", "Cits muitas jautājums"],
+  "Cits dokuments": ["Papildu informācija iepriekšējai vēstulei", "Apliecinoši dokumenti", "Cits dokuments vai ziņa speciālistam"],
+};
 
 function DocForm({ onSent, onCancel, recipient }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string }) {
   const [type, setType] = useState(recipient ? "Muitas jautājums" : "");
+  const [subtype, setSubtype] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!type || !text.trim() || error) return;
+        if (!type || !subtype || !text.trim() || error) return;
         onSent({
           kategorija: "Dokumenta iesniegšana",
-          tema: type,
+          tema: subtype,
           struktura: recipient ?? "VID speciālists",
           teksts: text,
         });
@@ -431,15 +463,22 @@ function DocForm({ onSent, onCancel, recipient }: { onSent: (s: Summary) => void
         <select
           required
           value={type}
-          onChange={(e) => setType(e.target.value)}
+          onChange={(e) => { setType(e.target.value); setSubtype(""); }}
           className="input-vid mt-1 h-9 w-full"
         >
           <option value="">— izvēlieties —</option>
-          {["Iesniegums", "Paskaidrojums", "Pilnvara", "Muitas jautājums", "Cits dokuments"].map((s) => (
+          {Object.keys(documentSubtypes).map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
       </label>
+      {type && <label className="mb-4 block text-sm text-primary">
+        Dokumenta apakšveids<span className="text-destructive">*</span>
+        <select required value={subtype} onChange={(e) => setSubtype(e.target.value)} className="input-vid mt-1 h-9 w-full">
+          <option value="">— izvēlieties —</option>
+          {(documentSubtypes[type] ?? []).map((s) => <option key={s}>{s}</option>)}
+        </select>
+      </label>}
       <label className="mb-5 block text-sm text-primary">
         Vēstules teksts / paskaidrojums<span className="text-destructive">*</span>
         <textarea
@@ -488,7 +527,7 @@ function DocForm({ onSent, onCancel, recipient }: { onSent: (s: Summary) => void
         </p>
       )}
       <div className="mt-4 flex gap-3">
-        <Button type="submit" disabled={!type || !text.trim() || !!error}>
+        <Button type="submit" disabled={!type || !subtype || !text.trim() || !!error}>
           Nosūtīt
         </Button>
         <Button variant="outline" type="button" onClick={onCancel}>
