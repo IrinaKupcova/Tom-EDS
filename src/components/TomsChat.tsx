@@ -178,11 +178,17 @@ export function TomsChat({
   );
 }
 
-export function useScriptedChat(initial: Msg[], reply: (text: string, turn: number) => Msg[]) {
+export function useScriptedChat(
+  initial: Msg[],
+  reply: (text: string, turn: number, history: Msg[]) => Msg[] | Promise<Msg[]>,
+) {
   const [messages, setMessages] = useState<Msg[]>(initial);
   const [busy, setBusy] = useState(false);
   const turn = useRef(0);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const generation = useRef(0);
+  const current = useRef(messages);
+  current.current = messages;
   useEffect(
     () => () => {
       if (pending.current) clearTimeout(pending.current);
@@ -191,19 +197,27 @@ export function useScriptedChat(initial: Msg[], reply: (text: string, turn: numb
   );
   const reset = (next: Msg[] = []) => {
     if (pending.current) clearTimeout(pending.current);
+    generation.current++;
     setBusy(false);
     turn.current = 0;
     setMessages(next);
   };
   const send = (text: string) => {
     if (busy) return;
-    setMessages((m) => [...m, { from: "user", text }]);
+    const history = [...current.current, { from: "user" as const, text }];
+    setMessages(history);
     setBusy(true);
-    const r = reply(text, turn.current++);
-    pending.current = setTimeout(() => {
-      setMessages((m) => [...m, ...r]);
-      setBusy(false);
-    }, 650);
+    const gen = generation.current;
+    const started = Date.now();
+    Promise.resolve(reply(text, turn.current++, history))
+      .catch((): Msg[] => [{ from: "toms", text: "Neizdevās saņemt atbildi. Lūdzu, mēģiniet vēlreiz." }])
+      .then((r) => {
+        pending.current = setTimeout(() => {
+          if (gen !== generation.current) return;
+          setMessages((m) => [...m, ...r]);
+          setBusy(false);
+        }, Math.max(0, 650 - (Date.now() - started)));
+      });
   };
   return { messages, setMessages, send, turn, busy, reset };
 }
