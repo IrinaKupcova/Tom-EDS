@@ -28,7 +28,7 @@ export const choices = [
   {
     id: "history" as const,
     title: "Sarakstes vēsture",
-    desc: "Sarunas, iesniegtās vēstules un to izskatīšanas statuss",
+    desc: "Sarunas un speciālistam pārsūtītās vēstules",
     icon: History,
     ai: false,
   },
@@ -65,14 +65,14 @@ export function CommunicationChoices({
                   <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
                   <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
                   {id === "history" ? (
-                    <span className="mt-2 block text-xs font-bold text-primary">Skatīt statusus</span>
+                    <span className="mt-2 block text-xs font-bold text-primary">Skatīt saraksti</span>
                   ) : id === "customs" ? (
                     <span className="mt-2 flex flex-wrap gap-1.5">
                       <span className="rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Asistents 24/7</span>
-                      <span className="rounded bg-accent-orange px-2 py-1 text-xs font-bold text-primary-foreground">Speciālists līdz 10 d. d.</span>
+                      <span className="rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Speciālists līdz 10 d. d.</span>
                     </span>
                   ) : (
-                    <span className={`mt-2 inline-block rounded px-2 py-1 text-xs font-bold text-primary-foreground ${ai ? "bg-primary" : "bg-accent-orange"}`}>
+                    <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">
                       {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām"}
                     </span>
                   )}
