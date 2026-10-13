@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Box, FilePlus2, History, MessageSquareMore, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TomsAvatar } from "@/components/TomsChat";
 
 export type CommunicationCategory = "chat" | "doc" | "customs" | "history";
 export const choices = [
@@ -44,50 +43,45 @@ export function CommunicationChoices({
 }) {
   return (
     <>
-      <div className="toms-introduction mb-4 flex items-center gap-3 rounded-lg border border-chat-border bg-chat-header p-4">
-        <TomsAvatar size={publicSite ? 48 : 36} virtualAssistant={!publicSite} />
-        <div className="min-w-0 text-sm">
-          <div className="font-bold text-primary">{publicSite ? "Toms — VID virtuālais asistents" : "VID virtuālais asistents"}</div>
-          {!publicSite && (
-            <div className="mt-1 text-xs text-muted-foreground">
-              <span className="online-dot" /> Virtuālais asistents · demonstrācija
-            </div>
-          )}
-          <p className="mt-1 leading-5 text-muted-foreground">
-            {publicSite
-              ? "Atbildu uz jautājumiem, sniedzu instrukcijas un palīdzu sagatavot ziņu VID speciālistam. Ja nepieciešama Jūsu identificēšana, šo pašu sarunu turpināsim EDS."
-              : "Atbildu uz jautājumiem un sameklēju informāciju par Jums iestādes informācijas sistēmās. Tikai sarežģītus jautājumus nododu speciālistam. Šeit datu saņemšana tiek demonstrēta."}
-          </p>
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {choices.filter(({ id }) => !publicSite || id !== "history").map(({ id, title, desc, icon: Icon, ai }) => (
-          <Button
-            key={id}
-            variant="outline"
-            onClick={() => onChoose(id)}
-            className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-chat-accent text-chat-primary">
-              <Icon size={20} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
-              {ai && (!publicSite || id !== "customs") && <span
-                className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${ai ? "bg-chat-accent text-chat-primary" : "bg-secondary text-muted-foreground"}`}
+      {[
+        { label: "NODOKĻU JOMA", ids: ["chat", "doc"] },
+        { label: "MUITAS JOMA", ids: ["customs"] },
+        ...(publicSite ? [] : [{ label: "SARAKSTES VĒSTURE", ids: ["history"] }]),
+      ].map((group) => (
+        <section key={group.label} className="mb-4" aria-label={group.label}>
+          <h3 className="mb-2 border-l-4 border-primary pl-2 text-xs font-bold tracking-wide text-primary">{group.label}</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {choices.filter(({ id }) => group.ids.includes(id)).map(({ id, title, desc, icon: Icon, ai }) => (
+              <Button
+                key={id}
+                variant="outline"
+                onClick={() => onChoose(id)}
+                className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none"
               >
-                {publicSite ? "Saziņu nodrošina virtuālais asistents" : "Virtuālais asistents"}
-              </span>}
-              <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">
-                {desc}
-              </span>
-              <span className={publicSite ? "mt-3 flex items-center gap-1.5 text-sm font-bold text-primary" : "mt-2 block text-[11px] text-primary"}>
-                {publicSite && id === "customs" ? "Asistents · speciālists · muitas punkti" : id === "history" ? "Skatīt statusus" : ai ? "Saziņa uzreiz · 24/7" : "Atbilde 1–10 darba dienās"}
-              </span>
-            </span>
-          </Button>
-        ))}
-      </div>
+                <span className="grid size-9 shrink-0 place-items-center rounded-md bg-chat-accent text-chat-primary">
+                  <Icon size={20} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
+                  <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
+                  {id === "history" ? (
+                    <span className="mt-2 block text-xs font-bold text-primary">Skatīt statusus</span>
+                  ) : id === "customs" ? (
+                    <span className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Asistents 24/7</span>
+                      <span className="rounded bg-accent-orange px-2 py-1 text-xs font-bold text-primary-foreground">Speciālists līdz 10 d. d.</span>
+                    </span>
+                  ) : (
+                    <span className={`mt-2 inline-block rounded px-2 py-1 text-xs font-bold text-primary-foreground ${ai ? "bg-primary" : "bg-accent-orange"}`}>
+                      {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām"}
+                    </span>
+                  )}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </section>
+      ))}
       {!publicSite && <p className="mt-2 text-[10px] text-muted-foreground">
         Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti.
       </p>}

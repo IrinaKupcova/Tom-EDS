@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
 import crestAsset from "@/assets/vid-crest.asset.json";
 import fundingAsset from "@/assets/eds-funding.asset.json";
+import { CustomsPoints } from "@/components/CustomsPoints";
+import { askAssistant } from "@/lib/ai.functions";
+import { isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
@@ -356,6 +359,7 @@ function EdsPage() {
                       </Button>
                     </div>
                   </section>
+                  {cat === "customs" && <section className="mt-4 border-t border-border pt-4"><CustomsPoints /></section>}
                 </>
               )}
             </>
