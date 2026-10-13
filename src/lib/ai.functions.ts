@@ -16,7 +16,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     })) as Turn[],
   }))
   .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env["LOVABLE_API_KEY"];
     if (!key) return { text: "Asistents pašlaik nav pieejams (konfigurācijas kļūda)." };
     const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
