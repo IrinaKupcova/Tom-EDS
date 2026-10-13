@@ -27,6 +27,8 @@ import { publicReply, saveConversation, clearConversation } from "@/lib/toms";
 import crestAsset from "@/assets/vid-crest.asset.json";
 import tomsAsset from "@/assets/toms-portrait.asset.json";
 import { CustomsPoints } from "@/components/CustomsPoints";
+import { askAssistant } from "@/lib/ai.functions";
+import { isGenericReply, toAiHistory } from "@/lib/toms";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -105,9 +107,16 @@ function VidPage() {
     return () => observer.disconnect();
   }, []);
   const navigate = useNavigate();
+  const categoryRef = useRef<CommunicationCategory>("chat");
+  categoryRef.current = chatCategory;
   const chat = useScriptedChat(
     [{ from: "toms", text: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?" }],
-    publicReply,
+    async (text, _turn, history) => {
+      const r = publicReply(text);
+      if (!isGenericReply(r) || /darba laik|klientu apkalp/i.test(text)) return r;
+      const { text: answer } = await askAssistant({ data: { history: toAiHistory(history), domain: categoryRef.current === "customs" ? "customs" : "tax" } });
+      return [{ from: "toms", text: answer }];
+    },
   );
   const choose = (category: CommunicationCategory) => {
     if (category === "doc") {
@@ -308,13 +317,13 @@ function VidPage() {
                   </div>
                   <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Muitas saziņas iespējas">
                     <Button variant={customsView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("assistant")}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
-                    <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "doc" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
+                    <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "doc", no: "auth" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
                     <Button variant={customsView === "points" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("points")}><Building2 size={17} /> Muitas punkti</Button>
                   </div>
                   {customsView === "choices" && <p className="text-sm font-bold text-primary">Virtuālais asistents — uzreiz, 24/7 · Speciālista atbilde — 1–10 darba dienās</p>}
                   {customsView !== "choices" && <Button variant="ghost" size="sm" onClick={() => setCustomsView("choices")} className="mb-3"><ArrowLeft size={15} /> Atpakaļ</Button>}
                   {customsView === "assistant" && chatSurface}
-                  {customsView === "points" && <CustomsPoints />}
+                  {customsView === "points" && <CustomsPoints requireAuth />}
                 </div>
               )}
             </div>
