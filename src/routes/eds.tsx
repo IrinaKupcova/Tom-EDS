@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
 import crestAsset from "@/assets/vid-crest.asset.json";
 import fundingAsset from "@/assets/eds-funding.asset.json";
+import { CustomsPoints } from "@/components/CustomsPoints";
+import { askAssistant } from "@/lib/ai.functions";
+import { isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
@@ -68,7 +71,7 @@ const greetings = {
 function EdsPage() {
   const { no, category, point } = Route.useSearch();
   const [tab, setTab] = useState(TABS[4]);
-  const [signedIn, setSignedIn] = useState(no !== "toms");
+  const [signedIn, setSignedIn] = useState(!no);
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<Summary[]>([]);
@@ -79,7 +82,7 @@ function EdsPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const requestText = useRef("");
   const topic = useRef<CommunicationCategory>("chat");
-  const chat = useScriptedChat([], (text, turn) => {
+  const chat = useScriptedChat([], (text, turn, history) => {
     requestText.current = [requestText.current, text].filter(Boolean).join("\n");
     const combined =
       topic.current === "customs"
@@ -87,7 +90,9 @@ function EdsPage() {
         : requestText.current;
     const complexPattern = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/i;
     const continuingSummary = turn > 0 && complexPattern.test(requestText.current) && !complexPattern.test(text);
-    return edsReply(combined, turn, text, continuingSummary);
+    const r = edsReply(combined, turn, text, continuingSummary);
+    if (!isGenericReply(r)) return r;
+    return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]);
   });
   const choose = (c: CommunicationCategory) => {
     setTab(TABS[4]);
@@ -116,10 +121,10 @@ function EdsPage() {
         chat.turn.current = 1;
         clearConversation();
       }
-    }
+    } else if (category) choose(category);
   };
   useEffect(() => {
-    if (no !== "toms" && category) choose(category);
+    if (!no && category) choose(category);
     // Search changes are entry points, not changes to the active conversation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [no, category, point]);
@@ -240,7 +245,7 @@ function EdsPage() {
           {!signedIn ? (
             <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
               <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
-              <p className="mb-5 text-sm leading-6">Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu.</p>
+              <p className="mb-5 text-sm leading-6">{no === "toms" ? "Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu." : point ? `Pēc pieslēgšanās varēsiet rakstīt: ${point}.` : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam."}</p>
               <Button className="w-full" onClick={continueConversation}>Pieslēgties EDS</Button>
               <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
             </section>
@@ -354,6 +359,7 @@ function EdsPage() {
                       </Button>
                     </div>
                   </section>
+                  {cat === "customs" && <section className="mt-4 border-t border-border pt-4"><CustomsPoints /></section>}
                 </>
               )}
             </>

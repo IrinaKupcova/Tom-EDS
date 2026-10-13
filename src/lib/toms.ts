@@ -149,3 +149,10 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
   if (/(muit|sūtījum|paka)/.test(t)) return [{ from: "toms", text: "Varu palīdzēt ar pasta sūtījuma deklarēšanu vai muitas deklarācijas statusu. Kas tieši Jūs interesē?" }];
   return [{ from: "toms", text: "Lūdzu, precizējiet jautājumu. Varu sniegt skaidrojumu vai sameklēt informāciju par Jūsu parādu, pārmaksu vai deklarācijas statusu. Speciālista iesaiste paredzēta tikai sarežģītiem jautājumiem." }];
 }
+
+/** Scripted replies that only offer generic guidance are answered by the AI model instead. */
+export const isGenericReply = (r: Msg[]) => !r.some((m) => m.action || m.from === "system");
+export const toAiHistory = (msgs: Msg[]) =>
+  msgs
+    .filter((m) => m.from !== "system" && !m.action)
+    .map((m) => ({ role: m.from === "user" ? ("user" as const) : ("assistant" as const), content: m.text }));
