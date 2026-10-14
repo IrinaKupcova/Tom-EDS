@@ -292,12 +292,12 @@ function VidPage() {
       <section className="mx-auto max-w-[940px] px-5 pb-7 pt-9">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-bold">Jaunumi</h2>
-          <a
-            href="https://www.vid.gov.lv/lv/jaunumi"
-            className="flex items-center gap-2 text-sm text-primary"
+          <span
+            aria-disabled="true"
+            className="flex cursor-default select-none items-center gap-2 text-sm text-muted-foreground"
           >
             Skatīt visus jaunumus <ArrowRight size={16} />
-          </a>
+          </span>
         </div>
       </section>
       <section ref={communicationSection} id="sazina" className="border-t border-border bg-secondary py-9">
