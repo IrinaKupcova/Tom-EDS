@@ -18,4 +18,4 @@
 - Keep public communication options behind the publicSite variant; use section visibility to move the shared public chat between its corner and inline positions without resetting the conversation or altering EDS.
 - Keep the public-to-EDS handoff simulated in session storage, with a visible prototype sign-in step before restoring the same conversation.
 - General tax/customs questions use a server function calling the AI gateway with web search; personal-data, complex and sign-in scenarios stay scripted so the prototype never invents personal data.
-- Keep document subtype options in a single typed catalogue and archive EDS conversations in page state when leaving chat, so history reflects the actual prototype session without backend persistence.
+- Keep document subtype options in a single typed catalogue; preserve EDS prototype conversations and specialist letters in session storage after hydration, with resumable history and no live backend persistence.

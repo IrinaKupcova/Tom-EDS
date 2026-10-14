@@ -45,8 +45,7 @@ export function CommunicationChoices({
     <>
       {[
         { label: "NODOKĻU JOMA", ids: ["chat", "doc"] },
-        { label: "MUITAS JOMA", ids: ["customs"] },
-        ...(publicSite ? [] : [{ label: "SARAKSTES VĒSTURE", ids: ["history"] }]),
+        { label: "MUITAS JOMA", ids: publicSite ? ["customs"] : ["customs", "history"] },
       ].map((group) => (
         <section key={group.label} className="mb-4" aria-label={group.label}>
           <h3 className="mb-2 border-l-4 border-primary pl-2 text-xs font-bold tracking-wide text-primary">{group.label}</h3>
@@ -64,14 +63,11 @@ export function CommunicationChoices({
                 <span className="min-w-0">
                   <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
                   <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
+                  {id === "chat" && <span className="mt-2 block text-xs leading-[18px] text-primary">Sarakste ar virtuālo asistentu — uz Jūsu jautājumiem atbild čatbots.</span>}
+                  {id === "customs" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu (čatbotu), speciālistu vai muitas punktu.</span>}
                   {id === "history" ? (
                     <span className="mt-2 block text-xs font-bold text-primary">Skatīt saraksti</span>
-                  ) : id === "customs" ? (
-                    <span className="mt-2 flex flex-wrap gap-1.5">
-                      <span className="rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Asistents 24/7</span>
-                      <span className="rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Speciālists līdz 10 d. d.</span>
-                    </span>
-                  ) : (
+                  ) : id === "customs" ? null : (
                     <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">
                       {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām"}
                     </span>

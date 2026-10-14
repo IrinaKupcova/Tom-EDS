@@ -38,6 +38,7 @@ type Props = {
   compact?: boolean;
   busy?: boolean;
   virtualAssistant?: boolean;
+  hideAvatar?: boolean;
 };
 export function TomsChat({
   messages,
@@ -48,6 +49,7 @@ export function TomsChat({
   compact,
   busy = false,
   virtualAssistant = false,
+  hideAvatar = false,
 }: Props) {
   const [text, setText] = useState("");
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -75,7 +77,7 @@ export function TomsChat({
                 className="max-w-full"
               >
                 <div className={`flex items-start gap-2 ${m.from === "user" ? "justify-end" : ""}`}>
-                  {m.from === "toms" && <TomsAvatar size={23} virtualAssistant={virtualAssistant} />}
+                  {m.from === "toms" && !hideAvatar && <TomsAvatar size={23} virtualAssistant={virtualAssistant} />}
                   <MessageContent className={m.from === "user" ? "bubble-user" : "bubble-toms"}>
                     <MessageResponse>{m.text}</MessageResponse>
                     {m.action === "auth" && onAuth && (
@@ -140,7 +142,7 @@ export function TomsChat({
           )}
           {busy && (
             <div className="flex items-center gap-2">
-              <TomsAvatar size={23} virtualAssistant={virtualAssistant} />
+              {!hideAvatar && <TomsAvatar size={23} virtualAssistant={virtualAssistant} />}
               <Shimmer className="text-xs">{virtualAssistant ? "Virtuālais asistents sagatavo atbildi…" : "Toms raksta…"}</Shimmer>
             </div>
           )}

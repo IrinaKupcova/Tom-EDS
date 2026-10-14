@@ -1,5 +1,6 @@
 # VID prototype
-- [ ] Unify response-time labels on blue backgrounds, add document subtypes, and show conversations/specialist letters without statuses in history.
+- [x] Unify response-time labels on blue backgrounds, add document subtypes, and show conversations/specialist letters without statuses in history.
+- [x] Restore assistant explanation, remove customs tile times/portrait, place history fourth beside customs, and preserve/resume all EDS conversations across view switches.
 - [x] Match public VID page and EDS appearance to supplied screenshots.
 - [x] Implement three communication choices, embedded tax/customs chats and validated manual document form.
 - [x] Verify public-to-EDS conversation continuation and submission flows.
@@ -18,7 +19,8 @@
 - [x] Use Toms’s portrait for the EDS assistant and remove the “Manuāla apstrāde” label.
 - [x] Add EDS correspondence history with submission statuses and expected response times.
 - [x] Let users address a message directly to a selected customs point.
-- [x] Verify both VID and EDS views and the complete handoff flow.- [ ] Customs: specialist/points require EDS sign-in first on public site; assistant follows normal chat flow.
+- [x] Verify both VID and EDS views and the complete handoff flow.
+- [x] Customs: specialist/points require EDS sign-in first on public site; assistant follows normal chat flow.
 - [x] Assistant proactively shares frequently-asked info for a topic.
 - [x] Connect AI model with web search for tax/customs answers.
 - [x] EDS: customs points block like public site; NODOKĻU/MUITAS JOMA headings; prominent 24/7 vs 10 days.

@@ -68,6 +68,8 @@ const greetings = {
   customs:
     "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
 };
+type SavedConversation = { id: string; category: "chat" | "customs"; messages: Msg[] };
+const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
   const { no, category, point } = Route.useSearch();
   const [tab, setTab] = useState(TABS[4]);
@@ -75,7 +77,9 @@ function EdsPage() {
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<Summary[]>([]);
-  const [conversations, setConversations] = useState<Msg[][]>([]);
+  const [conversations, setConversations] = useState<SavedConversation[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const activeConversation = useRef<string | null>(null);
   const [email, setEmail] = useState("jberzins@example.lv");
   const [editingEmail, setEditingEmail] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -96,9 +100,7 @@ function EdsPage() {
     return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]);
   });
   const choose = (c: CommunicationCategory) => {
-    if (chat.messages.some((m) => m.from === "user")) {
-      setConversations((rows) => [...rows, chat.messages]);
-    }
+    activeConversation.current = c === "chat" || c === "customs" ? crypto.randomUUID() : null;
     setTab(TABS[4]);
     setCat(c);
     setSent(null);
@@ -115,6 +117,7 @@ function EdsPage() {
         const lastUser = [...previous].reverse().find((m) => m.from === "user")?.text ?? "";
         const c = detectTopic(lastUser).kategorija === "Muitas jautājumi" ? "customs" : "chat";
         topic.current = c;
+        activeConversation.current = crypto.randomUUID();
         requestText.current = lastUser;
         setCat(c);
         setTab(TABS[4]);
@@ -128,14 +131,43 @@ function EdsPage() {
     } else if (category) choose(category);
   };
   useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(historyStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs") && Array.isArray(row.messages)));
+        if (Array.isArray(parsed.outbox)) setOutbox(parsed.outbox);
+      }
+    } catch { /* An unavailable or expired browser session starts empty. */ }
+    setHistoryLoaded(true);
+  }, []);
+  useEffect(() => {
+    const id = activeConversation.current;
+    if (!historyLoaded || !id || !chat.messages.some((m) => m.from === "user")) return;
+    const row: SavedConversation = { id, category: topic.current === "customs" ? "customs" : "chat", messages: chat.messages };
+    setConversations((rows) => rows.some((item) => item.id === id) ? rows.map((item) => item.id === id ? row : item) : [...rows, row]);
+  }, [chat.messages, historyLoaded]);
+  useEffect(() => {
+    if (!historyLoaded) return;
+    try { sessionStorage.setItem(historyStorageKey, JSON.stringify({ conversations, outbox })); } catch { /* Storage may be disabled in the browser. */ }
+  }, [conversations, outbox, historyLoaded]);
+  const resumeConversation = (row: SavedConversation) => {
+    activeConversation.current = row.id;
+    topic.current = row.category;
+    requestText.current = row.messages.filter((m) => m.from === "user").map((m) => m.text).join("\n");
+    setCat(row.category);
+    setSent(null);
+    setTab(TABS[4]);
+    chat.reset(row.messages);
+    chat.turn.current = row.messages.filter((m) => m.from === "user").length;
+  };
+  useEffect(() => {
     if (!no && category) choose(category);
     // Search changes are entry points, not changes to the active conversation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [no, category, point]);
   const reset = () => {
-    if (chat.messages.some((m) => m.from === "user")) {
-      setConversations((rows) => [...rows, chat.messages]);
-    }
+    activeConversation.current = null;
     setCat(null);
     setSent(null);
     setTab(TABS[4]);
@@ -309,14 +341,14 @@ function EdsPage() {
               ) : cat === null ? (
                 <CommunicationChoices onChoose={choose} />
               ) : cat === "history" ? (
-                <CorrespondenceHistory outbox={outbox} conversations={conversations} />
+                <CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} />
               ) : cat === "doc" ? (
                 <DocForm onSent={submit} onCancel={reset} {...(point ? { recipient: point } : {})} />
               ) : (
                 <>
                   <section className="overflow-hidden rounded-lg border border-border">
                     <div className="flex items-center gap-3 border-b border-border bg-chat-header px-4 py-3">
-                       <TomsAvatar size={30} virtualAssistant />
+                       {cat !== "customs" && <TomsAvatar size={30} virtualAssistant />}
                       <div>
                          <h3 className="text-sm font-bold text-primary">Virtuālais asistents</h3>
                         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -326,6 +358,7 @@ function EdsPage() {
                       </div>
                     </div>
                     <TomsChat
+                      hideAvatar={cat === "customs"}
                        virtualAssistant
                       messages={chat.messages}
                       onSend={chat.send}
@@ -401,7 +434,7 @@ const formats = [
   "xhtml",
   "zip",
 ];
-function CorrespondenceHistory({ outbox, conversations }: { outbox: Summary[]; conversations: Msg[][] }) {
+function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Summary[]; conversations: SavedConversation[]; onResume: (row: SavedConversation) => void }) {
   return <section aria-labelledby="history-title">
     <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
     <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules</p>
@@ -410,11 +443,12 @@ function CorrespondenceHistory({ outbox, conversations }: { outbox: Summary[]; c
       <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — 30 darba dienas</span>
     </div>
     <div className="divide-y divide-border border-y border-border">
-      {conversations.map((messages, index) => <article key={`chat-${index}`} className="py-4">
-        <h4 className="text-sm font-bold text-primary">{messages.find((m) => m.from === "user")?.text}</h4>
+      {conversations.map((row) => <article key={row.id} className="py-4">
+        <h4 className="text-sm font-bold text-primary">{row.messages.find((m) => m.from === "user")?.text}</h4>
         <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Saruna ar virtuālo asistentu</summary>
-          <div className="mt-3 space-y-3">{messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
+          <div className="mt-3 space-y-3">{row.messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
         </details>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => onResume(row)}>Turpināt saraksti</Button>
       </article>)}
       {outbox.map((item, index) => <article key={`letter-${index}`} className="py-4">
         <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
