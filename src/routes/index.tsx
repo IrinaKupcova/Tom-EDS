@@ -344,7 +344,7 @@ function VidPage() {
                   Talejas iela 1, Rīga, LV-1978
                 </li>
               </ul>
-              <Button variant="outline" className="mt-6 h-auto whitespace-normal border-primary px-4 py-3 text-primary" aria-disabled="true"><Building2 size={18} /> Klientu apkalpošana</Button>
+              <Button variant="outline" asChild className="mt-6 h-auto whitespace-normal border-primary px-4 py-3 text-primary"><a href="https://www.vid.gov.lv/lv/klientu-apkalposana"><Building2 size={18} /> Klientu apkalpošana</a></Button>
             </div>
           </div>
         </div>
