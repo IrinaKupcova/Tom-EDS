@@ -68,8 +68,8 @@ const greetings = {
   customs:
     "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
 };
-type SavedConversation = { id: string; category: "chat" | "customs"; messages: Msg[]; date?: string };
-type SavedLetter = Summary & { date?: string };
+type SavedConversation = { id: string; category: "chat" | "customs"; messages: Msg[]; date?: string | undefined };
+type SavedLetter = Summary & { date?: string | undefined };
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
   const router = useRouter();
@@ -463,7 +463,7 @@ const formats = [
   "xhtml",
   "zip",
 ];
-function HistoryDate({ date }: { date?: string }) {
+function HistoryDate({ date }: { date?: string | undefined }) {
   if (!date || Number.isNaN(Date.parse(date))) return <p className="mb-1 text-xs text-muted-foreground">Datums nav saglabāts</p>;
   return <time dateTime={date} className="mb-1 block text-xs text-muted-foreground">{new Date(date).toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Riga" })}</time>;
 }
