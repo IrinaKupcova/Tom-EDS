@@ -89,7 +89,7 @@ function EdsPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const requestText = useRef("");
   const topic = useRef<CommunicationCategory>("chat");
-  const previousSteps = useRef<Array<{ tab: string; cat: CommunicationCategory | null; sent: Summary | null; signedIn: boolean; messages: Msg[]; id: string | null; topic: CommunicationCategory; request: string; turn: number }>>([]);
+  const previousSteps = useRef<Array<{ tab: string | undefined; cat: CommunicationCategory | null; sent: Summary | null; signedIn: boolean; messages: Msg[]; id: string | null; topic: CommunicationCategory; request: string; turn: number }>>([]);
   const chat = useScriptedChat([], (text, turn, history) => {
     requestText.current = [requestText.current, text].filter(Boolean).join("\n");
     const combined =
