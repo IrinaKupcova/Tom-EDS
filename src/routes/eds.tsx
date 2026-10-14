@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
 import crestAsset from "@/assets/vid-crest.asset.json";
@@ -68,15 +68,17 @@ const greetings = {
   customs:
     "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
 };
-type SavedConversation = { id: string; category: "chat" | "customs"; messages: Msg[] };
+type SavedConversation = { id: string; category: "chat" | "customs"; messages: Msg[]; date?: string };
+type SavedLetter = Summary & { date?: string };
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
+  const router = useRouter();
   const { no, category, point } = Route.useSearch();
   const [tab, setTab] = useState(TABS[4]);
   const [signedIn, setSignedIn] = useState(!no);
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
-  const [outbox, setOutbox] = useState<Summary[]>([]);
+  const [outbox, setOutbox] = useState<SavedLetter[]>([]);
   const [conversations, setConversations] = useState<SavedConversation[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const activeConversation = useRef<string | null>(null);
@@ -87,6 +89,7 @@ function EdsPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const requestText = useRef("");
   const topic = useRef<CommunicationCategory>("chat");
+  const previousSteps = useRef<Array<{ tab: string; cat: CommunicationCategory | null; sent: Summary | null; signedIn: boolean; messages: Msg[]; id: string | null; topic: CommunicationCategory; request: string; turn: number }>>([]);
   const chat = useScriptedChat([], (text, turn, history) => {
     requestText.current = [requestText.current, text].filter(Boolean).join("\n");
     const combined =
@@ -99,7 +102,29 @@ function EdsPage() {
     if (!isGenericReply(r)) return r;
     return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]);
   });
-  const choose = (c: CommunicationCategory) => {
+  const rememberStep = () => {
+    previousSteps.current.push({ tab, cat, sent, signedIn, messages: chat.messages, id: activeConversation.current, topic: topic.current, request: requestText.current, turn: chat.turn.current });
+  };
+  const goBack = () => {
+    const step = previousSteps.current.pop();
+    if (!step) {
+      if (window.history.length > 1) router.history.back();
+      else router.navigate({ to: "/" });
+      return;
+    }
+    setTab(step.tab);
+    setCat(step.cat);
+    setSent(step.sent);
+    setSignedIn(step.signedIn);
+    activeConversation.current = step.id;
+    topic.current = step.topic;
+    requestText.current = step.request;
+    const latest = conversations.find((row) => row.id === step.id)?.messages;
+    chat.reset(latest ?? step.messages);
+    chat.turn.current = latest ? latest.filter((m) => m.from === "user").length : step.turn;
+  };
+  const choose = (c: CommunicationCategory, saveStep = true) => {
+    if (saveStep) rememberStep();
     activeConversation.current = c === "chat" || c === "customs" ? crypto.randomUUID() : null;
     setTab(TABS[4]);
     setCat(c);
@@ -110,6 +135,7 @@ function EdsPage() {
     else chat.reset([{ from: "toms", text: greetings[c] }]);
   };
   const continueConversation = () => {
+    rememberStep();
     setSignedIn(true);
     if (no === "toms") {
       const previous = loadConversation();
@@ -128,7 +154,7 @@ function EdsPage() {
         chat.turn.current = 1;
         clearConversation();
       }
-    } else if (category) choose(category);
+    } else if (category) choose(category, false);
   };
   useEffect(() => {
     try {
@@ -144,14 +170,15 @@ function EdsPage() {
   useEffect(() => {
     const id = activeConversation.current;
     if (!historyLoaded || !id || !chat.messages.some((m) => m.from === "user")) return;
-    const row: SavedConversation = { id, category: topic.current === "customs" ? "customs" : "chat", messages: chat.messages };
-    setConversations((rows) => rows.some((item) => item.id === id) ? rows.map((item) => item.id === id ? row : item) : [...rows, row]);
+    const row: SavedConversation = { id, category: topic.current === "customs" ? "customs" : "chat", messages: chat.messages, date: new Date().toISOString() };
+    setConversations((rows) => rows.some((item) => item.id === id) ? rows.map((item) => item.id === id ? { ...row, date: item.date } : item) : [...rows, row]);
   }, [chat.messages, historyLoaded]);
   useEffect(() => {
     if (!historyLoaded) return;
     try { sessionStorage.setItem(historyStorageKey, JSON.stringify({ conversations, outbox })); } catch { /* Storage may be disabled in the browser. */ }
   }, [conversations, outbox, historyLoaded]);
   const resumeConversation = (row: SavedConversation) => {
+    rememberStep();
     activeConversation.current = row.id;
     topic.current = row.category;
     requestText.current = row.messages.filter((m) => m.from === "user").map((m) => m.text).join("\n");
@@ -162,11 +189,12 @@ function EdsPage() {
     chat.turn.current = row.messages.filter((m) => m.from === "user").length;
   };
   useEffect(() => {
-    if (!no && category) choose(category);
+    if (!no && category) choose(category, false);
     // Search changes are entry points, not changes to the active conversation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [no, category, point]);
   const reset = () => {
+    rememberStep();
     activeConversation.current = null;
     setCat(null);
     setSent(null);
@@ -176,8 +204,9 @@ function EdsPage() {
     requestText.current = "";
   };
   const submit = (s: Summary) => {
+    rememberStep();
     setSent(s);
-    setOutbox((rows) => [...rows, s]);
+    setOutbox((rows) => [...rows, { ...s, date: new Date().toISOString() }]);
   };
   return (
     <div className="eds-shell flex min-h-screen bg-background">
@@ -272,7 +301,7 @@ function EdsPage() {
             <Button
               key={t}
               variant="ghost"
-              onClick={() => setTab(t)}
+              onClick={() => { if (tab !== t) { rememberStep(); setTab(t); } }}
               className={`h-auto rounded-none ${tab === t ? "eds-tab-active" : "eds-tab"}`}
             >
               {t}
@@ -281,6 +310,7 @@ function EdsPage() {
         </nav>
         {searchOpen && <div className="border-b border-border px-[15px] py-2"><input aria-label="Meklēt EDS" autoFocus placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid h-[26px] w-full max-w-[300px] rounded-none text-[10px]" /></div>}
         <main className={`flex-1 ${tab === TABS[4] ? "w-full max-w-[719px] px-[15px] pb-8 pt-7" : "pt-[7px]"}`}>
+          <Button variant="link" size="sm" onClick={goBack} className="mb-4 h-auto px-0 text-xs text-primary"><ArrowLeft size={14} /> Atpakaļ</Button>
           {!signedIn ? (
             <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
               <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
@@ -310,7 +340,6 @@ function EdsPage() {
           ) : (
             <>
               <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <h2 className="text-sm font-bold text-primary">Jauna sarakste</h2>
                 {(cat || sent) && (
                   <Button
                     variant="link"
@@ -334,7 +363,7 @@ function EdsPage() {
                   <p className="mt-3 text-xs text-muted-foreground">
                      Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.
                   </p>
-                  <Button variant="outline" className="mt-4" onClick={() => setTab("Nosūtne")}>
+                  <Button variant="outline" className="mt-4" onClick={() => { rememberStep(); setTab("Nosūtne"); }}>
                     Skatīt nosūtnē
                   </Button>
                 </section>
@@ -343,7 +372,7 @@ function EdsPage() {
               ) : cat === "history" ? (
                 <CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} />
               ) : cat === "doc" ? (
-                <DocForm onSent={submit} onCancel={reset} {...(point ? { recipient: point } : {})} />
+                <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : {})} />
               ) : (
                 <>
                   <section className="overflow-hidden rounded-lg border border-border">
@@ -434,7 +463,11 @@ const formats = [
   "xhtml",
   "zip",
 ];
-function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Summary[]; conversations: SavedConversation[]; onResume: (row: SavedConversation) => void }) {
+function HistoryDate({ date }: { date?: string }) {
+  if (!date || Number.isNaN(Date.parse(date))) return <p className="mb-1 text-xs text-muted-foreground">Datums nav saglabāts</p>;
+  return <time dateTime={date} className="mb-1 block text-xs text-muted-foreground">{new Date(date).toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Riga" })}</time>;
+}
+function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: SavedLetter[]; conversations: SavedConversation[]; onResume: (row: SavedConversation) => void }) {
   return <section aria-labelledby="history-title">
     <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
     <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules</p>
@@ -444,6 +477,7 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Su
     </div>
     <div className="divide-y divide-border border-y border-border">
       {conversations.map((row) => <article key={row.id} className="py-4">
+        <HistoryDate date={row.date} />
         <h4 className="text-sm font-bold text-primary">{row.messages.find((m) => m.from === "user")?.text}</h4>
         <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Saruna ar virtuālo asistentu</summary>
           <div className="mt-3 space-y-3">{row.messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
@@ -451,6 +485,7 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Su
         <Button variant="outline" size="sm" className="mt-3" onClick={() => onResume(row)}>Turpināt saraksti</Button>
       </article>)}
       {outbox.map((item, index) => <article key={`letter-${index}`} className="py-4">
+        <HistoryDate date={item.date} />
         <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
         <p className="mt-1 text-xs text-muted-foreground">Speciālistam pārsūtīta vēstule · {item.struktura}</p>
         <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>

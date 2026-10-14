@@ -63,11 +63,9 @@ export function CommunicationChoices({
                 <span className="min-w-0">
                   <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
                   <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
-                  {id === "chat" && <span className="mt-2 block text-xs leading-[18px] text-primary">Sarakste ar virtuālo asistentu — uz Jūsu jautājumiem atbild čatbots.</span>}
-                  {id === "customs" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu (čatbotu), speciālistu vai muitas punktu.</span>}
-                  {id === "history" ? (
-                    <span className="mt-2 block text-xs font-bold text-primary">Skatīt saraksti</span>
-                  ) : id === "customs" ? null : (
+                  {id === "chat" && <span className="mt-2 block text-xs leading-[18px] text-primary">Uz Jūsu jautājumiem atbild virtuālais asistents.</span>}
+                  {id === "customs" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu, speciālistu vai muitas punktu.</span>}
+                  {id === "history" || id === "customs" ? null : (
                     <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">
                       {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām"}
                     </span>

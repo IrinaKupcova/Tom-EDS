@@ -1,4 +1,5 @@
 # VID prototype
+- [ ] Simplify assistant wording, remove redundant headings/tile text, date history entries first, and provide previous-step navigation including sign-in.
 - [x] Unify response-time labels on blue backgrounds, add document subtypes, and show conversations/specialist letters without statuses in history.
 - [x] Restore assistant explanation, remove customs tile times/portrait, place history fourth beside customs, and preserve/resume all EDS conversations across view switches.
 - [x] Match public VID page and EDS appearance to supplied screenshots.
