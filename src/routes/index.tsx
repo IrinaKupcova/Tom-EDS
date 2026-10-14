@@ -150,15 +150,16 @@ function VidPage() {
     <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-panel)]" aria-label="Toms — VID virtuālais asistents">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
         <div className="flex items-center gap-3">
-          <TomsAvatar size={36} />
+          {chatCategory !== "customs" && <TomsAvatar size={36} />}
           <div>
-            <h3 className="text-sm font-bold">Toms</h3>
+            <h3 className="text-sm font-bold">{chatCategory === "customs" ? "Virtuālais asistents" : "Toms"}</h3>
             <p className="text-xs">VID virtuālais asistents{chatCategory === "customs" ? " · muitas jautājumi" : ""}</p>
           </div>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={() => setOpen(false)} aria-label="Aizvērt Tomu"><X size={18} /></Button>
       </div>
       <TomsChat
+        hideAvatar={chatCategory === "customs"}
         compact
         messages={chat.messages}
         busy={chat.busy}
