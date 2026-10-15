@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Box, FilePlus2, History, MessageSquareMore, RotateCcw } from "lucide-react";
+import { Box, FilePlus2, History, Home, MessageSquareMore, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { openStartGate } from "@/components/StartGate";
 
 export type CommunicationCategory = "chat" | "doc" | "customs" | "history";
 export const choices = [
@@ -113,6 +114,15 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
         <Link to="/eds" search={{}}>
           EDS
         </Link>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        title="Sākuma skats — izvēlēties EDS vai VID tīmekļa vietni"
+        onClick={openStartGate}
+        className="text-sidebar-muted hover:text-switch-foreground"
+      >
+        <Home size={14} /> Sākums
       </Button>
       <Button
         variant="ghost"
