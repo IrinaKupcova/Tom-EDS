@@ -108,7 +108,7 @@ export function TomsChat({
                                 if (m.summary) onSubmitSummary(m.summary);
                               }}
                             >
-                               {virtualAssistant ? "Nosūtīt speciālistam" : "Nosūtīt VID"}
+                                Jā, pārsūtīt VID speciālistam
                             </Button>
                             <Button
                               variant="outline"

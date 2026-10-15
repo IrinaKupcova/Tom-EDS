@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Box, FilePlus2, History, Home, MessageSquareMore, RotateCcw } from "lucide-react";
+import { Box, Dices, FilePlus2, History, Home, MessageSquareMore, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openStartGate } from "@/components/StartGate";
 
-export type CommunicationCategory = "chat" | "doc" | "customs" | "history";
+export type CommunicationCategory = "chat" | "doc" | "customs" | "history" | "gambling" | "gambling-doc";
 export const choices = [
   {
     id: "chat" as const,
@@ -14,7 +14,7 @@ export const choices = [
   },
   {
     id: "doc" as const,
-    title: "Iesniegt dokumentu vai rakstīt speciālistam",
+    title: "Rakstīt VID speciālistam",
     desc: "Iesniegums, paskaidrojums, dokuments vai ziņa VID speciālistam",
     icon: FilePlus2,
     ai: false,
@@ -68,7 +68,7 @@ export function CommunicationChoices({
                   {id === "customs" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu, speciālistu vai muitas punktu.</span>}
                   {id === "history" || id === "customs" ? null : (
                     <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">
-                      {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām"}
+                      {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz 30 darba dienām*"}
                     </span>
                   )}
                 </span>
@@ -77,6 +77,20 @@ export function CommunicationChoices({
           </div>
         </section>
       ))}
+      <section className="mb-4" aria-label="Azartspēļu un izložu joma">
+        <h3 className="mb-2 border-l-4 border-primary pl-2 text-xs font-bold tracking-wide text-primary">AZARTSPĒĻU UN IZLOŽU JOMA</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button variant="outline" onClick={() => onChoose("gambling")} className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none">
+            <Dices className="size-6 shrink-0 text-chat-primary" />
+            <span className="min-w-0"><span className="block text-sm font-bold text-primary">Rakstīt virtuālajam asistentam</span><span className="mt-2 block text-xs text-primary">Uz Jūsu jautājumiem atbild virtuālais asistents.</span></span>
+          </Button>
+          <Button variant="outline" onClick={() => onChoose("gambling-doc")} className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none">
+            <FilePlus2 className="size-6 shrink-0 text-chat-primary" />
+            <span className="min-w-0"><span className="block text-sm font-bold text-primary">Rakstīt VID speciālistam</span><span className="mt-2 block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz 30 darba dienām*</span></span>
+          </Button>
+        </div>
+      </section>
+      <ResponseTimeNote />
       {!publicSite && <p className="mt-2 text-[10px] text-muted-foreground">
         Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti.
       </p>}
@@ -84,11 +98,15 @@ export function CommunicationChoices({
   );
 }
 
+export function ResponseTimeNote() {
+  return <p className="mt-3 text-xs leading-5 text-muted-foreground">* <a href="https://likumi.lv/ta/id/164501-iesniegumu-likums#p5" target="_blank" rel="noreferrer" className="text-primary underline">Iesniegumu likuma 5. panta trešā un 3.¹ daļa</a>: atbilde parasti sniedzama 10 darbdienu laikā; ja nepieciešama papildu informācija, sadarbība ar citām iestādēm vai apjomīga analīze — mēneša laikā. Prototipā norādītās 30 darba dienas nav likumā noteiktais termiņš. Citām iesniegumu kategorijām var būt cita likumā noteikta kārtība.</p>;
+}
+
 export function ViewSwitch({ onReset }: { onReset: () => void }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="view-switch fixed bottom-3 left-3 z-40 flex items-center gap-1 rounded-full bg-switch p-1.5 text-xs text-switch-foreground shadow-[var(--shadow-panel)]">
-      <span className="px-2 text-[9px] font-bold text-sidebar-muted">PROTOTIPS</span>
+    <div className="view-switch sticky top-0 z-40 flex flex-wrap items-center justify-center gap-1 border-b border-border bg-switch p-1.5 text-xs text-switch-foreground shadow-[var(--shadow-panel)]">
+      <span className="px-2 text-xs font-bold">Skata izvēle</span>
       <Button
         variant="ghost"
         size="sm"

@@ -103,7 +103,7 @@ export function StartGate() {
           </Button>
         </div>
         <p className="mt-5 text-center text-[10px] text-muted-foreground">
-          Skatu varēs pārslēgt arī prototipa apakšējā kreisajā stūrī.
+          Skatu varēs pārslēgt arī lapas augšpusē.
         </p>
       </div>
     </div>
