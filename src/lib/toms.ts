@@ -37,6 +37,7 @@ const PERSONAL = [
 
 export function detectTopic(text: string): Summary {
   const t = text.toLowerCase();
+  if (/(azart|izloz|izlož|loterij)/.test(t)) return { kategorija: "Azartspēļu un izložu jautājumi", tema: "Jautājums par azartspēlēm un izlozēm", struktura: "VID azartspēļu un izložu jomas speciālists", teksts: text };
   if (/(muit|sūtījum|paka|imports|ievest|deklarēt preci)/.test(t))
     return {
       kategorija: "Muitas jautājumi",
@@ -80,6 +81,7 @@ export function needsIdentification(text: string) {
 
 export function publicReply(text: string): Msg[] {
   const t = text.toLowerCase();
+  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/.test(t)) return edsReply(text, 0);
   if (needsIdentification(text)) {
     return [
       {
@@ -126,7 +128,7 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
         from: "toms",
         text: continuingSummary
           ? "Papildināju jautājumu speciālistam. Pārbaudiet kopsavilkumu pirms nosūtīšanas."
-          : "Šajā demonstrācijas scenārijā jautājums ir sarežģīts un prasa speciālista izvērtējumu. Sagatavoju sarunas kopsavilkumu — Jums nav atkārtoti jāizvēlas kategorija un jāapraksta situācija. Sarežģītības noteikšanas kritēriji vēl tiks definēti.",
+          : "Uz šo jautājumu diemžēl nevaru atbildēt. Vai vēlies, lai pārsūtu Tavu jautājumu VID speciālistam, kurš sniegs atbildi likumu noteiktajos termiņos (parasti līdz 10 darba dienām, sarežģītos jautājumos - līdz 30 darba dienām)? Ir iespēja sazināties ar speciālistiem izmantojot citus kanālus: [Klientu apkalpošana](https://www.vid.gov.lv/lv/klientu-apkalposana).\n\n* Iesniegumu likuma 5. panta trešā un 3.¹ daļa paredz 10 darbdienas vai sarežģītos gadījumos vienu mēnesi, nevis 30 darba dienas. Šeit pārsūtīšana tiek demonstrēta.",
       },
       {
         from: "toms",
@@ -148,6 +150,13 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
   if (/(eds|darbīb)/.test(t)) return [{ from: "toms", text: "Dokumentus atradīsiet EDS sadaļā “Dokumenti”, bet saraksti — sadaļā “Sarakste ar VID”. Kuru darbību vēlaties veikt?" }];
   if (/(muit|sūtījum|paka)/.test(t)) return [{ from: "toms", text: "Varu palīdzēt ar pasta sūtījuma deklarēšanu vai muitas deklarācijas statusu. Kas tieši Jūs interesē?" }];
   return [{ from: "toms", text: "Lūdzu, precizējiet jautājumu. Varu sniegt skaidrojumu vai sameklēt informāciju par Jūsu parādu, pārmaksu vai deklarācijas statusu. Speciālista iesaiste paredzēta tikai sarežģītiem jautājumiem." }];
+}
+
+export function gamblingReply(text: string, history: Msg[]): Msg[] {
+  const context = "Azartspēļu un izložu jautājums: " + history.filter((m) => m.from === "user").map((m) => m.text).join("\n");
+  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/i.test(text) || history.some((m) => m.action === "summary")) return edsReply(context, 0, text, history.some((m) => m.action === "summary"));
+  if (needsIdentification(text)) return publicReply(text);
+  return [{ from: "toms", text: "Par azartspēlēm un izlozēm aktuālo informāciju varat skatīt [VID tīmekļa vietnē](https://www.vid.gov.lv/lv). Šajā prototipā šīs jomas konsultācija tiek demonstrēta. Ja nepieciešams konkrētas situācijas izvērtējums, varat izvēlēties rakstīt VID speciālistam." }];
 }
 
 /** Scripted replies that only offer generic guidance are answered by the AI model instead. */
