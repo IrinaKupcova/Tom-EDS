@@ -1,4 +1,5 @@
 # VID prototype
+- [ ] Raise view switching, add gambling/lotteries assistant and specialist choices, rename specialist tile, update escalation and legal timing notes, add structured-document notice, and widen only EDS navigation.
 - [x] Add a start screen asking which view to open (EDS or the VID website), reachable again from the prototype switcher.
 - [x] Simplify assistant wording, remove redundant headings/tile text, date history entries first, and provide previous-step navigation including sign-in.
 - [x] Unify response-time labels on blue backgrounds, add document subtypes, and show conversations/specialist letters without statuses in history.
