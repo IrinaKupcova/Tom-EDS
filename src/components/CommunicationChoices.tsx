@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Box, FilePlus2, History, MessageSquareMore, RotateCcw } from "lucide-react";
+import { Box, FilePlus2, History, Home, MessageSquareMore, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { openStartGate } from "@/components/StartGate";
 
 export type CommunicationCategory = "chat" | "doc" | "customs" | "history";
 export const choices = [
