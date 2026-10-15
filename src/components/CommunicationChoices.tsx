@@ -117,6 +117,15 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
       </Button>
       <Button
         variant="ghost"
+        size="sm"
+        title="Sākuma skats — izvēlēties EDS vai VID tīmekļa vietni"
+        onClick={openStartGate}
+        className="text-sidebar-muted hover:text-switch-foreground"
+      >
+        <Home size={14} /> Sākums
+      </Button>
+      <Button
+        variant="ghost"
         size="icon-sm"
         title="Sākt no jauna"
         aria-label="Atiestatīt prototipu"
