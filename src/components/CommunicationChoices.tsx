@@ -27,6 +27,13 @@ export const choices = [
     ai: true,
   },
   {
+    id: "gambling" as const,
+    title: "Sarakstīties ar VID par azartspēļu un izložu jomas jautājumiem",
+    desc: "Azartspēles, izlozes un saziņa ar jomas speciālistu",
+    icon: Dices,
+    ai: true,
+  },
+  {
     id: "history" as const,
     title: "Sarakstes vēsture",
     desc: "Sarunas un speciālistam pārsūtītās vēstules",
@@ -47,6 +54,7 @@ export function CommunicationChoices({
       {[
         { label: "NODOKĻU JOMA", ids: ["chat", "doc"] },
         { label: "MUITAS JOMA", ids: publicSite ? ["customs"] : ["customs", "history"] },
+        { label: "AZARTSPĒĻU UN IZLOŽU JOMA", ids: ["gambling"] },
       ].map((group) => (
         <section key={group.label} className="mb-4" aria-label={group.label}>
           <h3 className="mb-2 border-l-4 border-primary pl-2 text-xs font-bold tracking-wide text-primary">{group.label}</h3>
@@ -66,9 +74,10 @@ export function CommunicationChoices({
                   <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
                   {id === "chat" && <span className="mt-2 block text-xs leading-[18px] text-primary">Uz Jūsu jautājumiem atbild virtuālais asistents.</span>}
                   {id === "customs" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu, speciālistu vai muitas punktu.</span>}
-                  {id === "history" || id === "customs" ? null : (
+                  {id === "gambling" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu vai speciālistu.</span>}
+                  {id === "history" || id === "customs" || id === "gambling" ? null : (
                     <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">
-                      {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz 30 darba dienām*"}
+                      {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*"}
                     </span>
                   )}
                 </span>
@@ -77,19 +86,6 @@ export function CommunicationChoices({
           </div>
         </section>
       ))}
-      <section className="mb-4" aria-label="Azartspēļu un izložu joma">
-        <h3 className="mb-2 border-l-4 border-primary pl-2 text-xs font-bold tracking-wide text-primary">AZARTSPĒĻU UN IZLOŽU JOMA</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button variant="outline" onClick={() => onChoose("gambling")} className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none">
-            <Dices className="size-6 shrink-0 text-chat-primary" />
-            <span className="min-w-0"><span className="block text-sm font-bold text-primary">Rakstīt virtuālajam asistentam</span><span className="mt-2 block text-xs text-primary">Uz Jūsu jautājumiem atbild virtuālais asistents.</span></span>
-          </Button>
-          <Button variant="outline" onClick={() => onChoose("gambling-doc")} className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none">
-            <FilePlus2 className="size-6 shrink-0 text-chat-primary" />
-            <span className="min-w-0"><span className="block text-sm font-bold text-primary">Rakstīt VID speciālistam</span><span className="mt-2 block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz 30 darba dienām*</span></span>
-          </Button>
-        </div>
-      </section>
       <ResponseTimeNote />
       {!publicSite && <p className="mt-2 text-[10px] text-muted-foreground">
         Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti.
@@ -99,22 +95,22 @@ export function CommunicationChoices({
 }
 
 export function ResponseTimeNote() {
-  return <p className="mt-3 text-xs leading-5 text-muted-foreground">* <a href="https://likumi.lv/ta/id/164501-iesniegumu-likums#p5" target="_blank" rel="noreferrer" className="text-primary underline">Iesniegumu likuma 5. panta trešā un 3.¹ daļa</a>: atbilde parasti sniedzama 10 darbdienu laikā; ja nepieciešama papildu informācija, sadarbība ar citām iestādēm vai apjomīga analīze — mēneša laikā. Prototipā norādītās 30 darba dienas nav likumā noteiktais termiņš. Citām iesniegumu kategorijām var būt cita likumā noteikta kārtība.</p>;
+  return <p className="mt-3 text-xs leading-5 text-muted-foreground">* <a href="https://likumi.lv/ta/id/164501-iesniegumu-likums#p5" target="_blank" rel="noreferrer" className="text-primary underline">Iesniegumu likuma 5. panta trešā un 3.¹ daļa</a>: atbilde parasti sniedzama 10 darbdienu laikā; ja nepieciešama papildu informācija, sadarbība ar citām iestādēm vai apjomīga analīze — viena mēneša laikā. Citām iesniegumu kategorijām var būt cita likumā noteikta kārtība.</p>;
 }
 
 export function ViewSwitch({ onReset }: { onReset: () => void }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="view-switch sticky top-0 z-40 flex flex-wrap items-center justify-center gap-1 border-b border-border bg-switch p-1.5 text-xs text-switch-foreground shadow-[var(--shadow-panel)]">
-      <span className="px-2 text-xs font-bold">Skata izvēle</span>
+    <div className="view-switch fixed inset-x-0 top-0 z-50 flex h-12 flex-nowrap items-center justify-center gap-1 overflow-x-auto border-b-4 border-chat-primary bg-switch px-3 text-sm text-switch-foreground shadow-[var(--shadow-panel)]">
+      <span className="px-2 text-sm font-bold">Skata izvēle</span>
       <Button
         variant="ghost"
         size="sm"
         asChild
         className={
           path === "/"
-            ? "bg-card text-primary hover:bg-card"
-            : "text-sidebar-muted hover:text-switch-foreground"
+            ? "bg-card font-bold text-primary hover:bg-card"
+            : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
         }
       >
         <Link to="/">vid.gov.lv</Link>
@@ -125,8 +121,8 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
         asChild
         className={
           path === "/eds"
-            ? "bg-card text-primary hover:bg-card"
-            : "text-sidebar-muted hover:text-switch-foreground"
+            ? "bg-card font-bold text-primary hover:bg-card"
+            : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
         }
       >
         <Link to="/eds" search={{}}>
@@ -138,7 +134,7 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
         size="sm"
         title="Sākuma skats — izvēlēties EDS vai VID tīmekļa vietni"
         onClick={openStartGate}
-        className="text-sidebar-muted hover:text-switch-foreground"
+        className="text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
       >
         <Home size={14} /> Sākums
       </Button>
@@ -148,6 +144,7 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
         title="Sākt no jauna"
         aria-label="Atiestatīt prototipu"
         onClick={onReset}
+        className="text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
       >
         <RotateCcw size={14} />
       </Button>

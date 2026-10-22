@@ -22,13 +22,6 @@ export function StartGate() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    let chosen = false;
-    try {
-      chosen = Boolean(sessionStorage.getItem(START_KEY));
-    } catch {
-      chosen = false;
-    }
-    setOpen(!chosen);
     const show = () => setOpen(true);
     window.addEventListener(SHOW_EVENT, show);
     return () => window.removeEventListener(SHOW_EVENT, show);

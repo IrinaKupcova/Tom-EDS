@@ -1,7 +1,9 @@
+import { structuredFormNotice, wantsToWriteToSpecialist } from "@/lib/documents";
+
 export type Msg = {
   from: "toms" | "user" | "system";
   text: string;
-  action?: "auth" | "summary";
+  action?: "auth" | "summary" | "notice";
   summary?: Summary;
 };
 export type Summary = { kategorija: string; tema: string; struktura: string; teksts: string };
@@ -79,9 +81,24 @@ export function needsIdentification(text: string) {
   return PERSONAL.some((k) => t.includes(k));
 }
 
-export function publicReply(text: string): Msg[] {
+function userContext(text: string, history: Msg[] = []) {
+  const earlier = history.filter((m) => m.from === "user").map((m) => m.text);
+  return (earlier.length ? earlier : [text]).filter(Boolean).join("\n");
+}
+
+function specialistFormReply(latest: string, context: string): Msg[] | null {
+  if (!wantsToWriteToSpecialist(latest)) return null;
+  const notice = structuredFormNotice(context);
+  if (!notice) return null;
+  return [{ from: "toms", text: `Saprotu, ka vēlaties šo jautājumu nodot VID speciālistam. ${notice}`, action: "notice" }];
+}
+
+export function publicReply(text: string, history: Msg[] = []): Msg[] {
   const t = text.toLowerCase();
-  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/.test(t)) return edsReply(text, 0);
+  const context = userContext(text, history);
+  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/.test(t)) return edsReply(context, 0, text);
+  const formReply = specialistFormReply(text, context);
+  if (formReply) return formReply;
   if (needsIdentification(text)) {
     return [
       {
@@ -122,13 +139,16 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
   const t = latest.toLowerCase();
   // Illustrative scenarios only, not institution-approved complexity criteria.
   const complex = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/.test(t);
+  const formReply = !complex && !continuingSummary ? specialistFormReply(latest, text) : null;
+  if (formReply) return formReply;
   if (complex || continuingSummary) {
+    const notice = continuingSummary ? null : structuredFormNotice(text);
     return [
       {
         from: "toms",
         text: continuingSummary
           ? "Papildināju jautājumu speciālistam. Pārbaudiet kopsavilkumu pirms nosūtīšanas."
-          : "Uz šo jautājumu diemžēl nevaru atbildēt. Vai vēlies, lai pārsūtu Tavu jautājumu VID speciālistam, kurš sniegs atbildi likumu noteiktajos termiņos (parasti līdz 10 darba dienām, sarežģītos jautājumos - līdz 30 darba dienām)? Ir iespēja sazināties ar speciālistiem izmantojot citus kanālus: [Klientu apkalpošana](https://www.vid.gov.lv/lv/klientu-apkalposana).\n\n* Iesniegumu likuma 5. panta trešā un 3.¹ daļa paredz 10 darbdienas vai sarežģītos gadījumos vienu mēnesi, nevis 30 darba dienas. Šeit pārsūtīšana tiek demonstrēta.",
+          : `Uz šo jautājumu diemžēl nevaru atbildēt. Vai vēlies, lai pārsūtu Tavu jautājumu VID speciālistam, kurš sniegs atbildi likumu noteiktajos termiņos (parasti līdz 10 darba dienām, sarežģītos jautājumos - līdz vienam mēnesim)? Ir iespēja sazināties ar speciālistiem izmantojot citus kanālus: [Klientu apkalpošana](https://www.vid.gov.lv/lv/klientu-apkalposana).${notice ? `\n\n${notice}` : ""}\n\n* Iesniegumu likuma 5. panta trešā un 3.¹ daļa paredz 10 darbdienas vai sarežģītos gadījumos vienu mēnesi. Šeit pārsūtīšana tiek demonstrēta.`,
       },
       {
         from: "toms",
@@ -155,7 +175,9 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
 export function gamblingReply(text: string, history: Msg[]): Msg[] {
   const context = "Azartspēļu un izložu jautājums: " + history.filter((m) => m.from === "user").map((m) => m.text).join("\n");
   if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/i.test(text) || history.some((m) => m.action === "summary")) return edsReply(context, 0, text, history.some((m) => m.action === "summary"));
-  if (needsIdentification(text)) return publicReply(text);
+  const formReply = specialistFormReply(text, context);
+  if (formReply) return formReply;
+  if (needsIdentification(text)) return publicReply(text, history);
   return [{ from: "toms", text: "Par azartspēlēm un izlozēm aktuālo informāciju varat skatīt [VID tīmekļa vietnē](https://www.vid.gov.lv/lv). Šajā prototipā šīs jomas konsultācija tiek demonstrēta. Ja nepieciešams konkrētas situācijas izvērtējums, varat izvēlēties rakstīt VID speciālistam." }];
 }
 

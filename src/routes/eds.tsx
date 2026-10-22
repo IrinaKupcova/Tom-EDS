@@ -5,10 +5,12 @@ import crestAsset from "@/assets/vid-crest.asset.json";
 import fundingAsset from "@/assets/eds-funding.asset.json";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant } from "@/lib/ai.functions";
-import { isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
+import { documentSubtypes, submittedFormNotice } from "@/lib/documents";
+import { gamblingReply, isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
+  ViewSwitch,
   type CommunicationCategory,
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,7 @@ export const Route = createFileRoute("/eds")({
   ): { no?: string | undefined; category?: CommunicationCategory | undefined; point?: string | undefined } => ({
     no: typeof s["no"] === "string" ? s["no"] : undefined,
     category:
-      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs" || s["category"] === "history"
+      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs" || s["category"] === "history" || s["category"] === "gambling" || s["category"] === "gambling-doc"
         ? s["category"]
         : undefined,
     point: typeof s["point"] === "string" ? s["point"] : undefined,
@@ -67,8 +69,10 @@ const greetings = {
    chat: "Labdien! Esmu VID virtuālais asistents. Atbildu uz nodokļu jautājumiem un sameklēju informāciju par Jums iestādes IS. Tikai sarežģītus jautājumus nododu speciālistam. Šajā prototipā atbildes un dati ir simulēti. Par ko vēlaties jautāt?",
   customs:
     "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
+  gambling:
+    "Labdien! Esmu VID virtuālais asistents. Atbildu uz azartspēļu un izložu jautājumiem. Tikai sarežģītus jautājumus nododu jomas speciālistam. Šajā prototipā atbildes ir simulētas.",
 };
-type SavedConversation = { id: string; category: "chat" | "customs"; messages: Msg[]; date?: string | undefined };
+type SavedConversation = { id: string; category: "chat" | "customs" | "gambling"; messages: Msg[]; date?: string | undefined };
 type SavedLetter = Summary & { date?: string | undefined };
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
@@ -92,6 +96,7 @@ function EdsPage() {
   const previousSteps = useRef<Array<{ tab: string | undefined; cat: CommunicationCategory | null; sent: Summary | null; signedIn: boolean; messages: Msg[]; id: string | null; topic: CommunicationCategory; request: string; turn: number }>>([]);
   const chat = useScriptedChat([], (text, turn, history) => {
     requestText.current = [requestText.current, text].filter(Boolean).join("\n");
+    if (topic.current === "gambling") return gamblingReply(text, history);
     const combined =
       topic.current === "customs"
         ? `Muitas jautājums: ${requestText.current}`
@@ -125,13 +130,13 @@ function EdsPage() {
   };
   const choose = (c: CommunicationCategory, saveStep = true) => {
     if (saveStep) rememberStep();
-    activeConversation.current = c === "chat" || c === "customs" ? crypto.randomUUID() : null;
+    activeConversation.current = c === "chat" || c === "customs" || c === "gambling" ? crypto.randomUUID() : null;
     setTab(TABS[4]);
     setCat(c);
     setSent(null);
     requestText.current = "";
     topic.current = c;
-    if (c === "doc" || c === "history") chat.reset([]);
+    if (c === "doc" || c === "history" || c === "gambling-doc") chat.reset([]);
     else chat.reset([{ from: "toms", text: greetings[c] }]);
   };
   const continueConversation = () => {
@@ -141,15 +146,22 @@ function EdsPage() {
       const previous = loadConversation();
       if (previous) {
         const lastUser = [...previous].reverse().find((m) => m.from === "user")?.text ?? "";
-        const c = detectTopic(lastUser).kategorija === "Muitas jautājumi" ? "customs" : "chat";
+        const detected = detectTopic(lastUser).kategorija;
+        const c = detected === "Muitas jautājumi" ? "customs" : detected === "Azartspēļu un izložu jautājumi" ? "gambling" : "chat";
         topic.current = c;
         activeConversation.current = crypto.randomUUID();
         requestText.current = lastUser;
         setCat(c);
         setTab(TABS[4]);
+        const gamblingContinuation = gamblingReply(lastUser, previous);
+        const continuation = c !== "gambling"
+          ? edsReply(lastUser, 0)
+          : gamblingContinuation.some((m) => m.action === "auth")
+            ? [{ from: "toms" as const, text: "Pēc pieslēgšanās turpinām azartspēļu un izložu jautājumu. Ja vajag konkrētas situācijas izvērtējumu, varat rakstīt VID speciālistam." }]
+            : gamblingContinuation;
         chat.reset([
           ...previous.filter((m) => m.action !== "auth" && !m.text.toLowerCase().includes("identifik")),
-          ...edsReply(lastUser, 0),
+          ...continuation,
         ]);
         chat.turn.current = 1;
         clearConversation();
@@ -161,7 +173,7 @@ function EdsPage() {
       const stored = sessionStorage.getItem(historyStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs") && Array.isArray(row.messages)));
+        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs" || row.category === "gambling") && Array.isArray(row.messages)));
         if (Array.isArray(parsed.outbox)) setOutbox(parsed.outbox);
       }
     } catch { /* An unavailable or expired browser session starts empty. */ }
@@ -170,7 +182,7 @@ function EdsPage() {
   useEffect(() => {
     const id = activeConversation.current;
     if (!historyLoaded || !id || !chat.messages.some((m) => m.from === "user")) return;
-    const row: SavedConversation = { id, category: topic.current === "customs" ? "customs" : "chat", messages: chat.messages, date: new Date().toISOString() };
+    const row: SavedConversation = { id, category: topic.current === "customs" ? "customs" : topic.current === "gambling" ? "gambling" : "chat", messages: chat.messages, date: new Date().toISOString() };
     setConversations((rows) => rows.some((item) => item.id === id) ? rows.map((item) => item.id === id ? { ...row, date: item.date } : item) : [...rows, row]);
   }, [chat.messages, historyLoaded]);
   useEffect(() => {
@@ -203,15 +215,17 @@ function EdsPage() {
     clearConversation();
     requestText.current = "";
   };
+  const formNotice = sent ? submittedFormNotice(`${sent.tema}\n${sent.teksts}`) : null;
   const submit = (s: Summary) => {
     rememberStep();
     setSent(s);
     setOutbox((rows) => [...rows, { ...s, date: new Date().toISOString() }]);
   };
   return (
-    <div className="eds-shell flex min-h-screen bg-background">
+    <div className="eds-shell flex min-h-screen bg-background pt-12">
+      <ViewSwitch onReset={reset} />
       <aside
-        className={`${mobileMenu ? "fixed inset-y-0 left-0 z-30 block" : "hidden"} eds-sidebar w-[177px] shrink-0 bg-sidebar md:block`}
+        className={`${mobileMenu ? "fixed bottom-0 left-0 top-12 z-30 block" : "hidden"} eds-sidebar w-[177px] shrink-0 bg-sidebar md:block`}
       >
         <div className="flex h-[100px] flex-col items-center justify-center text-center text-sidebar-foreground">
           <img src={crestAsset.url} alt="Latvijas valsts ģerbonis" className="eds-crest mb-1 h-[55px] w-[55px] object-contain" />
@@ -363,6 +377,7 @@ function EdsPage() {
                   <p className="mt-3 text-xs text-muted-foreground">
                      Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.
                   </p>
+                  {formNotice && <p className="mt-2 text-xs text-primary">{formNotice}</p>}
                   <Button variant="outline" className="mt-4" onClick={() => { rememberStep(); setTab("Nosūtne"); }}>
                     Skatīt nosūtnē
                   </Button>
@@ -371,23 +386,23 @@ function EdsPage() {
                 <CommunicationChoices onChoose={choose} />
               ) : cat === "history" ? (
                 <CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} />
-              ) : cat === "doc" ? (
-                <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : {})} />
+              ) : cat === "doc" || cat === "gambling-doc" ? (
+                <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : {})} />
               ) : (
                 <>
                   <section className="overflow-hidden rounded-lg border border-border">
                     <div className="flex items-center gap-3 border-b border-border bg-chat-header px-4 py-3">
-                       {cat !== "customs" && <TomsAvatar size={30} virtualAssistant />}
+                       {cat !== "customs" && cat !== "gambling" && <TomsAvatar size={30} virtualAssistant />}
                       <div>
                          <h3 className="text-sm font-bold text-primary">Virtuālais asistents</h3>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           <span className="online-dot" />
-                          {cat === "customs" ? "Muitas jautājumi" : "Nodokļu jomas jautājumi"}
+                          {cat === "customs" ? "Muitas jautājumi" : cat === "gambling" ? "Azartspēļu un izložu jautājumi" : "Nodokļu jomas jautājumi"}
                         </p>
                       </div>
                     </div>
                     <TomsChat
-                      hideAvatar={cat === "customs"}
+                      hideAvatar={cat === "customs" || cat === "gambling"}
                        virtualAssistant
                       messages={chat.messages}
                       onSend={chat.send}
@@ -396,7 +411,9 @@ function EdsPage() {
                       suggestions={
                         cat === "customs"
                           ? ["Pasta sūtījumi", "Muitas jautājumi", "Rakstu uz muitas punktu"]
-                          : [
+                          : cat === "gambling"
+                            ? ["Azartspēļu organizēšana", "Izložu atļauja"]
+                            : [
                               "Gada ienākumu deklarācija",
                                "Kāds man ir parāds?",
                               "Darbības EDS",
@@ -408,24 +425,37 @@ function EdsPage() {
                   <section className="mt-4 border-t border-border pt-4">
                     <h3 className="mb-3 text-xs font-bold text-primary">Citas saziņas iespējas</h3>
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-auto whitespace-normal border-primary text-primary"
-                        onClick={() => choose(cat === "customs" ? "chat" : "customs")}
-                      >
-                        {cat === "customs"
-                          ? "Rakstīt par nodokļu jautājumu"
-                          : "Rakstīt par muitas jautājumu"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-auto whitespace-normal border-primary text-primary"
-                        onClick={() => choose("doc")}
-                      >
-                        Iesniegt dokumentu vai rakstīt speciālistam
-                      </Button>
+                      {cat === "gambling" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-auto whitespace-normal border-primary text-primary"
+                          onClick={() => choose("gambling-doc")}
+                        >
+                          Rakstīt speciālistam
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-auto whitespace-normal border-primary text-primary"
+                            onClick={() => choose(cat === "customs" ? "chat" : "customs")}
+                          >
+                            {cat === "customs"
+                              ? "Rakstīt par nodokļu jautājumu"
+                              : "Rakstīt par muitas jautājumu"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-auto whitespace-normal border-primary text-primary"
+                            onClick={() => choose("doc")}
+                          >
+                            Iesniegt dokumentu vai rakstīt speciālistam
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </section>
                   {cat === "customs" && <section className="mt-4 border-t border-border pt-4"><CustomsPoints /></section>}
@@ -473,7 +503,7 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Sa
     <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules</p>
     <div className="mb-5 flex flex-wrap gap-2 text-xs font-bold text-primary-foreground">
       <span className="rounded bg-primary px-2 py-1">Parastos gadījumos — 10 darba dienas</span>
-      <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — 30 darba dienas</span>
+      <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — līdz vienam mēnesim</span>
     </div>
     <div className="divide-y divide-border border-y border-border">
       {conversations.map((row) => <article key={row.id} className="py-4">
@@ -495,16 +525,8 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Sa
   </section>;
 }
 
-const documentSubtypes: Record<string, string[]> = {
-  "Iesniegums": ["Iesniegums par nodokļu atmaksu", "Iesniegums par nodokļu parāda samaksas termiņa pagarinājumu", "Iesniegums par nodokļu maksājumu sadalīšanu termiņos", "Iesniegums par nodokļu aprēķina pārskatīšanu", "Cits iesniegums"],
-  "Paskaidrojums": ["Paskaidrojums par deklarācijas datiem", "Paskaidrojums par ienākumiem", "Paskaidrojums par nodokļu maksājumiem", "Cits paskaidrojums"],
-  "Pilnvara": ["Pilnvara pārstāvībai VID", "Pilnvara muitas formalitāšu kārtošanai", "Pilnvaras atsaukums", "Cita pilnvara"],
-  "Muitas jautājums": ["Par pasta sūtījuma muitošanu", "Par muitas deklarācijas precizēšanu", "Par muitas maksājumu atmaksu", "Cits muitas jautājums"],
-  "Cits dokuments": ["Papildu informācija iepriekšējai vēstulei", "Apliecinoši dokumenti", "Cits dokuments vai ziņa speciālistam"],
-};
-
-function DocForm({ onSent, onCancel, recipient }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string }) {
-  const [type, setType] = useState(recipient ? "Muitas jautājums" : "");
+function DocForm({ onSent, onCancel, recipient, documentType }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string; documentType?: string }) {
+  const [type, setType] = useState(documentType ?? (recipient ? "Muitas jautājums" : ""));
   const [subtype, setSubtype] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState("");

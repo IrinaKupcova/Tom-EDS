@@ -358,10 +358,6 @@ body {
     font-size: 12px;
     padding: 13px 10px;
   }
-  .view-switch {
-    left: 8px;
-    bottom: 8px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
