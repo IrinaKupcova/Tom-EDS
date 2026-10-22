@@ -116,8 +116,12 @@ function VidPage() {
       if (categoryRef.current === "gambling") return gamblingReply(text, history);
       const r = publicReply(text, history);
       if (!isGenericReply(r) || /darba laik|klientu apkalp/i.test(text)) return r;
-      const { text: answer } = await askAssistant({ data: { history: toAiHistory(history), domain: categoryRef.current === "customs" ? "customs" : "tax" } });
-      return [{ from: "toms", text: answer }];
+      try {
+        const { text: answer } = await askAssistant({ data: { history: toAiHistory(history), domain: categoryRef.current === "customs" ? "customs" : "tax" } });
+        return [{ from: "toms", text: answer }];
+      } catch {
+        return r;
+      }
     },
   );
   const choose = (category: CommunicationCategory) => {

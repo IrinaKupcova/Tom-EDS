@@ -105,7 +105,7 @@ function EdsPage() {
     const continuingSummary = turn > 0 && complexPattern.test(requestText.current) && !complexPattern.test(text);
     const r = edsReply(combined, turn, text, continuingSummary);
     if (!isGenericReply(r)) return r;
-    return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]);
+    return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]).catch(() => r);
   });
   const rememberStep = () => {
     previousSteps.current.push({ tab, cat, sent, signedIn, messages: chat.messages, id: activeConversation.current, topic: topic.current, request: requestText.current, turn: chat.turn.current });
