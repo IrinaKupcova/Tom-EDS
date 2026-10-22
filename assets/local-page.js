@@ -1,5 +1,11 @@
 (function () {
   if (location.protocol !== "file:") return;
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".fixed.bottom-5").forEach(function (node) {
+      node.remove();
+    });
+    if (location.hash === "#pieslegties") showAuth();
+  });
 
   var channel = "chat";
   var panel = null;
@@ -34,6 +40,8 @@
     channel = next;
     if (!panel) panel = buildChat();
     panel.hidden = false;
+    var page = document.querySelector(".min-h-screen");
+    if (page) page.style.paddingRight = "50%";
     panel.querySelector("[data-title]").textContent = next === "chat" ? "Toms" : "Virtuālais asistents";
     var log = panel.querySelector("[data-log]");
     log.textContent = greetings[next];
@@ -41,14 +49,19 @@
 
   function buildChat() {
     var el = document.createElement("section");
-    el.className = "fixed bottom-5 right-4 z-50 flex max-h-[70vh] w-[350px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-panel)]";
+    el.className = "fixed bottom-0 right-0 top-12 z-40 flex flex-col overflow-hidden border-l border-border bg-card shadow-[var(--shadow-panel)]";
+    el.style.width = "50%";
     el.innerHTML =
       '<div class="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground"><h3 data-title class="text-sm font-bold">Toms</h3><button type="button" data-close class="text-sm" aria-label="Aizvērt">×</button></div>' +
       '<div data-log class="min-h-24 flex-1 overflow-y-auto whitespace-pre-wrap px-4 py-3 text-sm"></div>' +
       '<form class="flex gap-2 border-t border-border p-3"><input data-input class="input-vid min-w-0 flex-1" aria-label="Jautājums" placeholder="Rakstiet jautājumu"><button type="submit" class="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground">Sūtīt</button></form>';
     document.body.appendChild(el);
+    var page = document.querySelector(".min-h-screen");
+    if (page) page.style.paddingRight = "50%";
     el.querySelector("[data-close]").addEventListener("click", function () {
       el.hidden = true;
+      var page = document.querySelector(".min-h-screen");
+      if (page) page.style.paddingRight = "";
     });
     el.querySelector("form").addEventListener("submit", function (event) {
       event.preventDefault();
@@ -124,6 +137,4 @@
     else if (/muitas jomas/.test(text)) openChat("customs");
     else if (/azartspēļu un izložu jomas/.test(text)) openChat("gambling");
   });
-
-  if (location.hash === "#pieslegties") showAuth();
 })();

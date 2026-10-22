@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Accessibility,
   ArrowRight,
@@ -24,7 +24,6 @@ import {
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation } from "@/lib/toms";
-import tomsPortrait from "@/assets/toms-portrait.png";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant } from "@/lib/ai.functions";
@@ -96,17 +95,6 @@ function VidPage() {
   const [chatCategory, setChatCategory] = useState<CommunicationCategory>("chat");
   const [customsView, setCustomsView] = useState<"choices" | "assistant" | "points">("choices");
   const [gamblingView, setGamblingView] = useState<"choices" | "assistant">("choices");
-  const [sectionVisible, setSectionVisible] = useState(false);
-  const communicationSection = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const section = communicationSection.current;
-    if (!section) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      setSectionVisible(entry?.isIntersecting ?? false);
-    });
-    observer.observe(section);
-    return () => observer.disconnect();
-  }, []);
   const navigate = useNavigate();
   const categoryRef = useRef<CommunicationCategory>("chat");
   categoryRef.current = chatCategory;
@@ -155,7 +143,7 @@ function VidPage() {
     chat.send(text);
   };
   const chatSurface = (
-    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-panel)]" aria-label="Toms — VID virtuālais asistents">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-card" aria-label="Toms — VID virtuālais asistents">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
         <div className="flex items-center gap-3">
           {chatCategory !== "customs" && chatCategory !== "gambling" && <TomsAvatar size={36} />}
@@ -168,7 +156,7 @@ function VidPage() {
       </div>
       <TomsChat
         hideAvatar={chatCategory === "customs" || chatCategory === "gambling"}
-        compact
+        sidePanel
         messages={chat.messages}
         busy={chat.busy}
         onSend={chat.send}
@@ -182,7 +170,7 @@ function VidPage() {
     </section>
   );
   return (
-    <div className="min-h-screen bg-background pt-12">
+    <div className={`min-h-screen bg-background pt-12 ${open ? "pr-[50%]" : ""}`}>
       <ViewSwitch
         onReset={() => {
           chat.reset([
@@ -333,7 +321,7 @@ function VidPage() {
           </span>
         </div>
       </section>
-      <section ref={communicationSection} id="sazina" className="border-t border-border bg-secondary py-9">
+      <section id="sazina" className="border-t border-border bg-secondary py-9">
         <div className="mx-auto max-w-[940px] px-5">
           <h2 className="text-center text-2xl font-bold">Saziņa ar VID</h2>
           <p className="mb-8 mt-3 text-center text-sm text-muted-foreground">
@@ -394,23 +382,7 @@ function VidPage() {
           </div>
         </div>
       </section>
-      {(open || !sectionVisible) && <div className="fixed bottom-5 right-4 z-50 w-[350px] max-w-[calc(100vw-2rem)]">
-        {open ? chatSurface : (
-          <Button
-            onClick={() => setOpen(true)}
-            className="relative ml-auto h-auto w-full whitespace-normal rounded-lg px-5 py-3 pr-12 text-left text-sm font-normal leading-5 shadow-[var(--shadow-panel)]"
-          >
-            {chatCategory === "customs"
-              ? "Turpināt saraksti par muitas jautājumiem."
-              : chatCategory === "gambling"
-                ? "Turpināt saraksti par azartspēlēm un izlozēm."
-                : "Es esmu VID virtuālais asistents TOMS. Droši jautājiet — centīšos palīdzēt."}
-            <span className="toms-public-avatar absolute -bottom-3 -right-1 grid size-14 place-items-center rounded-full border border-border bg-card">
-              <img src={tomsPortrait} alt="Toms" className="size-full rounded-full object-cover" />
-            </span>
-          </Button>
-        )}
-      </div>}
+      {open && <div className="fixed bottom-0 right-0 top-12 z-40 flex w-1/2 flex-col border-l border-border bg-card shadow-[var(--shadow-panel)]">{chatSurface}</div>}
     </div>
   );
 }

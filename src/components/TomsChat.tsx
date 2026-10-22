@@ -36,6 +36,7 @@ type Props = {
   onSubmitSummary?: (s: Summary) => void;
   suggestions?: string[];
   compact?: boolean;
+  sidePanel?: boolean;
   busy?: boolean;
   virtualAssistant?: boolean;
   hideAvatar?: boolean;
@@ -47,6 +48,7 @@ export function TomsChat({
   onSubmitSummary,
   suggestions,
   compact,
+  sidePanel = false,
   busy = false,
   virtualAssistant = false,
   hideAvatar = false,
@@ -61,7 +63,7 @@ export function TomsChat({
   const first = !messages.some((m) => m.from === "user");
   return (
     <div
-      className={`toms-chat flex min-h-0 flex-col ${compact ? "h-[410px]" : "h-[375px] sm:h-[375px]"}`}
+      className={`toms-chat flex min-h-0 flex-col ${sidePanel ? "h-full flex-1" : compact ? "h-[410px]" : "h-[375px] sm:h-[375px]"}`}
     >
       <Conversation className="bg-chat-surface" aria-label={virtualAssistant ? "Saruna ar virtuālo asistentu" : "Saruna ar Tomu"}>
         <ConversationContent className="gap-3 p-4">
