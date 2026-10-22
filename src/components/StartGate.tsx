@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Globe, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import crestAsset from "@/assets/vid-crest.asset.json";
+import vidCrestMark from "@/assets/vid-crest-mark.png";
 
 const START_KEY = "vid-start-view-v1";
 const SHOW_EVENT = "vid-start-gate";
@@ -50,7 +50,7 @@ export function StartGate() {
       <div className="w-full max-w-[560px] rounded-lg border border-border bg-card p-6 shadow-[var(--shadow-panel)] sm:p-8">
         <div className="flex flex-col items-center text-center">
           <img
-            src={crestAsset.url}
+            src={vidCrestMark}
             alt="Latvijas valsts ģerbonis"
             className="h-[64px] w-[64px] object-contain"
           />

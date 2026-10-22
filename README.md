@@ -2,7 +2,7 @@
 
 Publiskā lapa: https://irinakupcova.github.io/Tom-EDS/
 
-Šī ir VID un EDS saziņas prototipa lapa. To veido Cursor un publicē GitHub Pages.
+Šīs mapes `index.html` ir pati prototipa lapa, tāda pati kā Lovable skatā: VID sākumlapa, EDS, Toms un saziņas soļi.
 
 ## Lokāli
 

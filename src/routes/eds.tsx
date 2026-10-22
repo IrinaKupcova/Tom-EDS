@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
-import crestAsset from "@/assets/vid-crest.asset.json";
-import fundingAsset from "@/assets/eds-funding.asset.json";
+import vidCrestMark from "@/assets/vid-crest-mark.png";
+import fundingImage from "@/assets/eds-funding.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant } from "@/lib/ai.functions";
 import { documentSubtypes, submittedFormNotice } from "@/lib/documents";
@@ -228,7 +228,7 @@ function EdsPage() {
         className={`${mobileMenu ? "fixed bottom-0 left-0 top-12 z-30 block" : "hidden"} eds-sidebar w-[177px] shrink-0 bg-sidebar md:block`}
       >
         <div className="flex h-[100px] flex-col items-center justify-center text-center text-sidebar-foreground">
-          <img src={crestAsset.url} alt="Latvijas valsts ģerbonis" className="eds-crest mb-1 h-[55px] w-[55px] object-contain" />
+          <img src={vidCrestMark} alt="Latvijas valsts ģerbonis" className="eds-crest mb-1 h-[55px] w-[55px] object-contain" />
           <div className="text-[9px] font-bold">Valsts ieņēmumu dienests</div>
         </div>
           <div className="flex h-[58px] items-center justify-center bg-secondary text-center text-[10px] leading-3 text-primary">
@@ -468,7 +468,7 @@ function EdsPage() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <a href="tel:67120000" className="flex items-center gap-1 font-bold"><Phone size={15} fill="currentColor" />67120000</a>
             {["Lietošanas noteikumi", "Personas datu apstrāde VID", "Sīkdatņu izmantošanas politika"].map((label) => <span key={label} className="flex items-center gap-1 font-bold underline"><UserRoundPen size={17} fill="currentColor" />{label}</span>)}
-            <img src={fundingAsset.url} alt="Nacionālais attīstības plāns 2020 un Eiropas Savienības Eiropas Reģionālās attīstības fonds — Ieguldījums tavā nākotnē" className="h-[50px] w-[222px] object-contain" />
+            <img src={fundingImage} alt="Nacionālais attīstības plāns 2020 un Eiropas Savienības Eiropas Reģionālās attīstības fonds — Ieguldījums tavā nākotnē" className="h-[50px] w-[222px] object-contain" />
           </div>
           <p className="mt-[-2px] text-[9px] text-foreground">Versija 28.0.60.7, <Link to="/" className="text-primary underline">www.vid.gov.lv</Link></p>
         </footer>

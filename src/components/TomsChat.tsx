@@ -15,7 +15,7 @@ import {
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import tomsAsset from "@/assets/toms-portrait.asset.json";
+import tomsPortrait from "@/assets/toms-portrait.png";
 
 export function TomsAvatar({ size = 36, virtualAssistant = false }: { size?: number; virtualAssistant?: boolean }) {
   return (
@@ -24,7 +24,7 @@ export function TomsAvatar({ size = 36, virtualAssistant = false }: { size?: num
       style={{ width: size, height: size, fontSize: size * 0.34 }}
       aria-hidden
     >
-      <img src={tomsAsset.url} alt="" className="size-full rounded-full object-cover" />
+      <img src={tomsPortrait} alt="" className="size-full rounded-full object-cover" />
     </div>
   );
 }

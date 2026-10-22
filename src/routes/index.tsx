@@ -24,7 +24,7 @@ import {
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation } from "@/lib/toms";
-import tomsAsset from "@/assets/toms-portrait.asset.json";
+import tomsPortrait from "@/assets/toms-portrait.png";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant } from "@/lib/ai.functions";
@@ -400,7 +400,7 @@ function VidPage() {
           >
             Es esmu VID virtuālais asistents TOMS. Droši jautājiet — centīšos palīdzēt.
             <span className="toms-public-avatar absolute -bottom-3 -right-1 grid size-14 place-items-center rounded-full border border-border bg-card">
-              <img src={tomsAsset.url} alt="Toms" className="size-full rounded-full object-cover" />
+              <img src={tomsPortrait} alt="Toms" className="size-full rounded-full object-cover" />
             </span>
           </Button>
         )}
