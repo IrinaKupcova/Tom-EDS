@@ -80,6 +80,7 @@ function EdsPage() {
   const { no, category, point } = Route.useSearch();
   const [tab, setTab] = useState(TABS[4]);
   const [signedIn, setSignedIn] = useState(!no);
+  const [authTarget, setAuthTarget] = useState<CommunicationCategory | null>(null);
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<SavedLetter[]>([]);
@@ -128,8 +129,17 @@ function EdsPage() {
     chat.reset(latest ?? step.messages);
     chat.turn.current = latest ? latest.filter((m) => m.from === "user").length : step.turn;
   };
-  const choose = (c: CommunicationCategory, saveStep = true) => {
+  const choose = (c: CommunicationCategory, saveStep = true, fromAuth = false) => {
+    if ((c === "doc" || c === "gambling-doc") && !fromAuth) {
+      if (saveStep) rememberStep();
+      setAuthTarget(c);
+      setSignedIn(false);
+      setCat(null);
+      setSent(null);
+      return;
+    }
     if (saveStep) rememberStep();
+    setAuthTarget(null);
     activeConversation.current = c === "chat" || c === "customs" || c === "gambling" ? crypto.randomUUID() : null;
     setTab(TABS[4]);
     setCat(c);
@@ -166,7 +176,8 @@ function EdsPage() {
         chat.turn.current = 1;
         clearConversation();
       }
-    } else if (category) choose(category, false);
+    } else if (authTarget) choose(authTarget, false, true);
+    else if (category) choose(category, false, true);
   };
   useEffect(() => {
     try {

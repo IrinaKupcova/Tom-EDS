@@ -126,14 +126,13 @@ function VidPage() {
   );
   const choose = (category: CommunicationCategory) => {
     if (category === "doc") {
-      navigate({ to: "/eds", search: { category: "doc" } });
+      navigate({ to: "/eds", search: { category: "doc", no: "auth" } });
       return;
     }
     setChatCategory(category);
-    setCustomsView("choices");
-    setGamblingView("choices");
+    setCustomsView(category === "customs" ? "assistant" : "choices");
+    setGamblingView(category === "gambling" ? "assistant" : "choices");
     setOpen(true);
-    communicationSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     chat.reset([
       {
         from: "toms",
@@ -296,9 +295,15 @@ function VidPage() {
                     ) : (
                       <a
                         href="#sazina"
-                        onClick={() => {
-                          if (item === "Pasta sūtījumi") choose("customs");
-                          if (item === "Atbalsts azartspēļu spēlētājiem") choose("gambling");
+                        onClick={(event) => {
+                          if (item === "Pasta sūtījumi") {
+                            event.preventDefault();
+                            choose("customs");
+                          }
+                          if (item === "Atbalsts azartspēļu spēlētājiem") {
+                            event.preventDefault();
+                            choose("gambling");
+                          }
                         }}
                       >
                         {item}
@@ -337,7 +342,6 @@ function VidPage() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="min-w-0">
               <CommunicationChoices onChoose={choose} publicSite />
-              {open && chatCategory === "chat" && <div className="mt-5">{chatSurface}</div>}
               {open && chatCategory === "customs" && (
                 <div className="mt-5 border-t border-border pt-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
@@ -345,13 +349,12 @@ function VidPage() {
                     <Button variant="ghost" size="icon-sm" aria-label="Aizvērt muitas saziņu" onClick={() => setOpen(false)}><X size={18} /></Button>
                   </div>
                   <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Muitas saziņas iespējas">
-                    <Button variant={customsView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("assistant")}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
+                    <Button variant={customsView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => { setCustomsView("assistant"); setOpen(true); }}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
                     <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "doc", no: "auth" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
                     <Button variant={customsView === "points" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("points")}><Building2 size={17} /> Muitas punkti</Button>
                   </div>
                   {customsView === "choices" && <div className="flex flex-wrap gap-2 text-xs font-bold text-primary-foreground"><span className="rounded bg-primary px-2 py-1">Virtuālais asistents — uzreiz, 24/7</span><span className="rounded bg-primary px-2 py-1">Speciālista atbilde — līdz 10 darba dienām</span></div>}
                   {customsView !== "choices" && <Button variant="ghost" size="sm" onClick={() => setCustomsView("choices")} className="mb-3"><ArrowLeft size={15} /> Atpakaļ</Button>}
-                  {customsView === "assistant" && chatSurface}
                   {customsView === "points" && <CustomsPoints requireAuth />}
                 </div>
               )}
@@ -362,12 +365,11 @@ function VidPage() {
                     <Button variant="ghost" size="icon-sm" aria-label="Aizvērt azartspēļu saziņu" onClick={() => setOpen(false)}><X size={18} /></Button>
                   </div>
                   <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Azartspēļu un izložu saziņas iespējas">
-                    <Button variant={gamblingView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setGamblingView("assistant")}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
+                    <Button variant={gamblingView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => { setGamblingView("assistant"); setOpen(true); }}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
                     <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "gambling-doc", no: "auth" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
                   </div>
                   {gamblingView === "choices" && <div className="flex flex-wrap gap-2 text-xs font-bold text-primary-foreground"><span className="rounded bg-primary px-2 py-1">Virtuālais asistents — uzreiz, 24/7</span><span className="rounded bg-primary px-2 py-1">Speciālista atbilde — līdz 10 darba dienām</span></div>}
                   {gamblingView !== "choices" && <Button variant="ghost" size="sm" onClick={() => setGamblingView("choices")} className="mb-3"><ArrowLeft size={15} /> Atpakaļ</Button>}
-                  {gamblingView === "assistant" && chatSurface}
                 </div>
               )}
             </div>
@@ -392,13 +394,17 @@ function VidPage() {
           </div>
         </div>
       </section>
-      {!sectionVisible && chatCategory !== "customs" && chatCategory !== "gambling" && <div className="fixed bottom-5 right-4 z-50 w-[350px] max-w-[calc(100vw-2rem)]">
+      {(open || !sectionVisible) && <div className="fixed bottom-5 right-4 z-50 w-[350px] max-w-[calc(100vw-2rem)]">
         {open ? chatSurface : (
           <Button
             onClick={() => setOpen(true)}
             className="relative ml-auto h-auto w-full whitespace-normal rounded-lg px-5 py-3 pr-12 text-left text-sm font-normal leading-5 shadow-[var(--shadow-panel)]"
           >
-            Es esmu VID virtuālais asistents TOMS. Droši jautājiet — centīšos palīdzēt.
+            {chatCategory === "customs"
+              ? "Turpināt saraksti par muitas jautājumiem."
+              : chatCategory === "gambling"
+                ? "Turpināt saraksti par azartspēlēm un izlozēm."
+                : "Es esmu VID virtuālais asistents TOMS. Droši jautājiet — centīšos palīdzēt."}
             <span className="toms-public-avatar absolute -bottom-3 -right-1 grid size-14 place-items-center rounded-full border border-border bg-card">
               <img src={tomsPortrait} alt="Toms" className="size-full rounded-full object-cover" />
             </span>
