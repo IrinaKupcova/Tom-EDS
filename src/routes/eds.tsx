@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen, X } from "lucide-react";
 import vidCrestMark from "@/assets/vid-crest-mark.png";
 import fundingImage from "@/assets/eds-funding.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
-import { askAssistant } from "@/lib/ai.functions";
+import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
 import { documentSubtypes, submittedFormNotice } from "@/lib/documents";
 import { gamblingReply, isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
@@ -98,16 +98,19 @@ function EdsPage() {
   const previousSteps = useRef<Array<{ tab: string | undefined; cat: CommunicationCategory | null; sent: Summary | null; signedIn: boolean; messages: Msg[]; id: string | null; topic: CommunicationCategory; request: string; turn: number }>>([]);
   const chat = useScriptedChat([], (text, turn, history) => {
     requestText.current = [requestText.current, text].filter(Boolean).join("\n");
-    if (topic.current === "gambling") return gamblingReply(text, history);
     const combined =
       topic.current === "customs"
         ? `Muitas jautājums: ${requestText.current}`
         : requestText.current;
     const complexPattern = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/i;
     const continuingSummary = turn > 0 && complexPattern.test(requestText.current) && !complexPattern.test(text);
-    const r = edsReply(combined, turn, text, continuingSummary);
+    const r = topic.current === "gambling" ? gamblingReply(text, history) : edsReply(combined, turn, text, continuingSummary);
     if (!isGenericReply(r)) return r;
-    return askAssistant({ data: { history: toAiHistory(history), domain: topic.current === "customs" ? "customs" : "tax" } }).then(({ text: answer }): Msg[] => [{ from: "toms", text: answer }]).catch(() => r);
+    const domain: AssistantDomain = topic.current === "customs" ? "customs" : topic.current === "gambling" ? "gambling" : "tax";
+    return askAssistant({ data: { history: toAiHistory(history), domain } }).then(({ text: answer }): Msg[] => {
+      const usable = usableAssistantAnswer(answer);
+      return usable ? [{ from: "toms", text: usable }] : r;
+    }).catch(() => r);
   });
   const rememberStep = () => {
     previousSteps.current.push({ tab, cat, sent, signedIn, messages: chat.messages, id: activeConversation.current, topic: topic.current, request: requestText.current, turn: chat.turn.current });
@@ -226,10 +229,14 @@ function EdsPage() {
     clearConversation();
     requestText.current = "";
   };
-  const activeSummary = notice ?? sent;
-  const formNotice = activeSummary ? submittedFormNotice(`${activeSummary.tema}\n${activeSummary.teksts}`) : null;
+  const [assistantReply, setAssistantReply] = useState<string | null>(null);
   const submit = (s: Summary) => {
     setOutbox((rows) => [...rows, { ...s, date: new Date().toISOString() }]);
+    setAssistantReply(null);
+    const domain: AssistantDomain = /muit/i.test(`${s.kategorija} ${s.tema} ${s.teksts}`) ? "customs" : /azart|izlož|izloz/i.test(`${s.kategorija} ${s.tema} ${s.teksts}`) ? "gambling" : "tax";
+    askAssistant({ data: { history: [{ role: "user", content: s.teksts }], domain } })
+      .then(({ text }) => setAssistantReply(usableAssistantAnswer(text)))
+      .catch(() => setAssistantReply(null));
     if (previousSteps.current.length) {
       setNotice(s);
       goBack();
@@ -354,18 +361,16 @@ function EdsPage() {
         <main className={`flex-1 ${tab === TABS[4] ? "w-full max-w-[719px] px-[15px] pb-8 pt-7" : "pt-[7px]"}`}>
           <Button variant="link" size="sm" onClick={goBack} className="mb-4 h-auto px-0 text-xs text-primary"><ArrowLeft size={14} /> Atpakaļ</Button>
           {!opened && notice && (
-            <section role="status" className="mb-5 border border-border bg-card p-4">
-              <CheckCircle2 className="mb-3 text-chat-primary" />
-              <h3 className="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h3>
-              <p className="mt-3 text-sm">Tēma: {notice.tema}</p>
-              <p className="mt-1 text-sm">Adresāts: {notice.struktura}</p>
-              <p className="mt-3 text-xs text-muted-foreground">Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>
-              {formNotice && <p className="mt-2 text-xs text-primary">{formNotice}</p>}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => setNotice(null)}>Aizvērt</Button>
-                <Button variant="outline" onClick={() => { setNotice(null); rememberStep(); setTab("Nosūtne"); }}>Skatīt nosūtnē</Button>
-              </div>
-            </section>
+            <SentResult
+              summary={notice}
+              reply={assistantReply}
+              actions={
+                <>
+                  <Button variant="outline" onClick={() => { setNotice(null); setAssistantReply(null); }}>Aizvērt</Button>
+                  <Button variant="outline" onClick={() => { setNotice(null); setAssistantReply(null); rememberStep(); setTab("Nosūtne"); }}>Skatīt nosūtnē</Button>
+                </>
+              }
+            />
           )}
           {signedIn && (tab !== TABS[4] ? (
             <>
@@ -405,15 +410,9 @@ function EdsPage() {
                   <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
                 </section>
               ) : sent ? (
-                <section role="status" className="mx-auto max-w-3xl px-4 py-6">
-                  <CheckCircle2 className="mb-3 text-chat-primary" />
-                  <h3 className="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h3>
-                  <p className="mt-3 text-sm">Tēma: {sent.tema}</p>
-                  <p className="mt-1 text-sm">Adresāts: {sent.struktura}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>
-                  {formNotice && <p className="mt-2 text-xs text-primary">{formNotice}</p>}
-                  <Button variant="outline" className="mt-4" onClick={goBack}>Atgriezties</Button>
-                </section>
+                <div className="mx-auto max-w-3xl px-4 py-6">
+                  <SentResult summary={sent} reply={assistantReply} actions={<Button variant="outline" onClick={goBack}>Atgriezties</Button>} />
+                </div>
               ) : cat === "history" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} /></div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
@@ -529,6 +528,30 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Sa
       {!conversations.length && !outbox.length && <p className="py-4 text-sm text-muted-foreground">Nav sarunu vai speciālistam pārsūtītu vēstuļu.</p>}
     </div>
   </section>;
+}
+
+function SentResult({ summary, reply, actions }: { summary: Summary; reply: string | null; actions: ReactNode }) {
+  const notice = submittedFormNotice(`${summary.tema}\n${summary.teksts}`);
+  return (
+    <section role="status" className="mb-5 border border-border bg-card p-4">
+      <CheckCircle2 className="mb-3 text-chat-primary" />
+      <h3 className="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h3>
+      {reply && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{reply}</p>}
+      <div className="mt-4 flex flex-wrap gap-3">
+        <div className="min-w-[150px] rounded-md border-2 border-primary px-4 py-3">
+          <p className="text-base font-bold text-primary">10 darba dienas</p>
+          <p className="mt-1 text-xs text-muted-foreground">Parastais termiņš</p>
+        </div>
+        <div className="min-w-[150px] rounded-md border-2 border-primary px-4 py-3">
+          <p className="text-base font-bold text-primary">1 mēnesis</p>
+          <p className="mt-1 text-xs text-muted-foreground">Sarežģītos gadījumos</p>
+        </div>
+      </div>
+      {notice && <p className="mt-4 rounded-md border-2 border-primary bg-warning-surface px-4 py-3 text-sm font-semibold leading-6 text-primary">{notice}</p>}
+      <p className="mt-3 text-xs text-muted-foreground">Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>
+      <div className="mt-4 flex flex-wrap gap-2">{actions}</div>
+    </section>
+  );
 }
 
 function DocForm({ onSent, onCancel, recipient, documentType }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string; documentType?: string }) {

@@ -57,5 +57,5 @@ export function structuredFormNotice(context: string): string | null {
 export function submittedFormNotice(context: string): string | null {
   const form = matchStructuredForm(context);
   if (!form) return null;
-  return `Šādam pakalpojumam ir veidlapa EDS: “${form.subtype}”. ${WHERE}`;
+  return `Vēršam uzmanību, ka šādam pakalpojumam ir veidlapa EDS: “${form.subtype}”. ${WHERE}`;
 }

@@ -117,8 +117,9 @@
       note.className = "mx-auto mb-4 max-w-3xl border border-border bg-card p-4";
       note.innerHTML =
         '<h2 class="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h2>' +
-        '<p class="mt-3 text-sm">Tēma: ' + tema + "</p>" +
-        '<p class="mt-3 text-xs text-muted-foreground">Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>' +
+        '<div class="mt-4 flex flex-wrap gap-3"><div class="rounded-md border-2 border-primary px-4 py-3"><p class="text-base font-bold text-primary">10 darba dienas</p><p class="mt-1 text-xs text-muted-foreground">Parastais termiņš</p></div><div class="rounded-md border-2 border-primary px-4 py-3"><p class="text-base font-bold text-primary">1 mēnesis</p><p class="mt-1 text-xs text-muted-foreground">Sarežģītos gadījumos</p></div></div>' +
+        (/grāmatiņ|gramatin/i.test(tema) ? '<p class="mt-4 rounded-md border-2 border-primary bg-warning-surface px-4 py-3 text-sm font-semibold leading-6 text-primary">Vēršam uzmanību, ka šādam pakalpojumam ir veidlapa EDS: “Iesniegums par algas nodokļa grāmatiņas piešķiršanu”.</p>' : "") +
+        '<p class="mt-3 text-xs text-muted-foreground">Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>' +
         '<button type="button" class="mt-4 rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button>';
       note.querySelector("button").addEventListener("click", function () {
         note.remove();

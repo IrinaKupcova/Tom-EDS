@@ -2,14 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
-const INSTRUCTIONS = `Tu esi VID (Valsts ieņēmumu dienests, Latvija) virtuālais asistents. Atbildi latviski, īsi (līdz ~120 vārdiem), tikai par nodokļu un muitas jomu.
+const INSTRUCTIONS = `Tu esi VID (Valsts ieņēmumu dienests, Latvija) virtuālais asistents. Atbildi latviski, īsi (līdz ~120 vārdiem) un runā ar lietotāju tieši.
 Meklē aktuālu informāciju internetā, priekšroku dodot vid.gov.lv un likumi.lv, un norādi avotu saiti.
 Ja tēma ir tāda, par kuru klienti bieži jautā vienu un to pašu (piem., gada ienākumu deklarācijas pārmaksas atmaksas termiņš, PVN pasta sūtījumiem no trešajām valstīm, deklarēšanas termiņi), pievieno atsevišķu rindkopu "**Bieži jautā:**" ar šo informāciju.
-Nekad neizdomā konkrētas personas datus. Ja jautājums par citu jomu, pieklājīgi novirzi uz nodokļu/muitas tēmām.`;
+Nekad neizdomā konkrētas personas datus, parādus, pārmaksas vai deklarācijas statusu. Ja jautājums ir par personas datiem, saki, ka tie pieejami pēc EDS pieslēgšanās, un neizdomā skaitļus.
+Ja jautājums ir ārpus pašreizējās jomas, pieklājīgi novirzi atpakaļ uz to.`;
+
+export type AssistantDomain = "tax" | "customs" | "gambling";
+
+export function usableAssistantAnswer(text: string) {
+  const answer = text.trim();
+  if (!answer || /nav pieejams|neizdevās|pārāk daudz|kredīti ir beigušies|konfigurācijas/i.test(answer)) return null;
+  return answer;
+}
 
 export const askAssistant = createServerFn({ method: "POST" })
-  .inputValidator((d: { history: Turn[]; domain: "tax" | "customs" }) => ({
-    domain: d.domain === "customs" ? "customs" : "tax",
+  .inputValidator((d: { history: Turn[]; domain: AssistantDomain }) => ({
+    domain: d.domain === "customs" ? "customs" : d.domain === "gambling" ? "gambling" : "tax",
     history: (Array.isArray(d.history) ? d.history : []).slice(-12).map((t) => ({
       role: t.role === "assistant" ? "assistant" : "user",
       content: String(t.content).slice(0, 4000),
@@ -27,7 +36,7 @@ export const askAssistant = createServerFn({ method: "POST" })
         store: false,
         reasoning: { effort: "low" },
         tools: [{ type: "web_search" }],
-        instructions: `${INSTRUCTIONS}\nPašreizējā joma: ${data.domain === "customs" ? "muita" : "nodokļi"}.`,
+        instructions: `${INSTRUCTIONS}\nPašreizējā joma: ${data.domain === "customs" ? "muita" : data.domain === "gambling" ? "azartspēles un izlozes" : "nodokļi"}.`,
         input: data.history,
       }),
     });

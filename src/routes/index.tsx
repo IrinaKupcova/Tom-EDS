@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation } from "@/lib/toms";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
-import { askAssistant } from "@/lib/ai.functions";
+import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
 import { isGenericReply, toAiHistory } from "@/lib/toms";
 
 export const Route = createFileRoute("/")({
@@ -100,15 +100,17 @@ function VidPage() {
   const chat = useScriptedChat(
     [{ from: "toms", text: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?" }],
     async (text, _turn, history) => {
-      if (categoryRef.current === "gambling") return gamblingReply(text, history);
-      const r = publicReply(text, history);
-      if (!isGenericReply(r) || /darba laik|klientu apkalp/i.test(text)) return r;
+      const scripted = categoryRef.current === "gambling" ? gamblingReply(text, history) : publicReply(text, history);
+      if (!isGenericReply(scripted)) return scripted;
+      const domain: AssistantDomain = categoryRef.current === "customs" ? "customs" : categoryRef.current === "gambling" ? "gambling" : "tax";
       try {
-        const { text: answer } = await askAssistant({ data: { history: toAiHistory(history), domain: categoryRef.current === "customs" ? "customs" : "tax" } });
-        return [{ from: "toms", text: answer }];
+        const { text: answer } = await askAssistant({ data: { history: toAiHistory(history), domain } });
+        const usable = usableAssistantAnswer(answer);
+        if (usable) return [{ from: "toms" as const, text: usable }];
       } catch {
-        return r;
+        /* The scripted reply stays available when the model cannot be reached. */
       }
+      return scripted;
     },
   );
   const choose = (category: CommunicationCategory) => {
