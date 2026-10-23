@@ -5,7 +5,7 @@ import vidCrestMark from "@/assets/vid-crest-mark.png";
 import fundingImage from "@/assets/eds-funding.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
-import { documentSubtypes, submittedFormNotice } from "@/lib/documents";
+import { documentSubtypes, matchStructuredForm, submittedFormNotice } from "@/lib/documents";
 import { gamblingReply, isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
@@ -530,25 +530,69 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Sa
   </section>;
 }
 
+function VidLink({ href, children }: { href: string; children: ReactNode }) {
+  return <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline">{children}</a>;
+}
+
 function SentResult({ summary, reply, actions }: { summary: Summary; reply: string | null; actions: ReactNode }) {
-  const notice = submittedFormNotice(`${summary.tema}\n${summary.teksts}`);
+  const context = `${summary.tema}\n${summary.teksts}`;
+  const notice = submittedFormNotice(context);
+  const form = matchStructuredForm(context);
+  const wageBook = form?.subtype.includes("algas nodokļa grāmatiņas");
   return (
     <section role="status" className="mb-5 border border-border bg-card p-4">
       <CheckCircle2 className="mb-3 text-chat-primary" />
       <h3 className="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h3>
       {reply && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{reply}</p>}
       <div className="mt-4 flex flex-wrap gap-3">
-        <div className="min-w-[150px] rounded-md border-2 border-primary px-4 py-3">
-          <p className="text-base font-bold text-primary">10 darba dienas</p>
-          <p className="mt-1 text-xs text-muted-foreground">Parastais termiņš</p>
+        <div className="min-w-[220px] flex-1 rounded-md border-2 border-primary px-4 py-3">
+          <p className="text-sm font-bold text-primary">Parastais atbildes termiņš</p>
+          <p className="mt-1 text-lg font-bold">10 darba dienas</p>
         </div>
-        <div className="min-w-[150px] rounded-md border-2 border-primary px-4 py-3">
-          <p className="text-base font-bold text-primary">1 mēnesis</p>
-          <p className="mt-1 text-xs text-muted-foreground">Sarežģītos gadījumos</p>
+        <div className="min-w-[220px] flex-1 rounded-md border-2 border-primary px-4 py-3">
+          <p className="text-sm font-bold text-primary">Atbildes termiņš sarežģītos gadījumos</p>
+          <p className="mt-1 text-lg font-bold">1 mēnesis</p>
         </div>
       </div>
       {notice && <p className="mt-4 rounded-md border-2 border-primary bg-warning-surface px-4 py-3 text-sm font-semibold leading-6 text-primary">{notice}</p>}
-      <p className="mt-3 text-xs text-muted-foreground">Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>
+      <div className="mt-5">
+        <h4 className="text-sm font-bold uppercase tracking-wide text-primary">Ieteikumi</h4>
+        <h5 className="mb-2 mt-4 text-sm font-bold">Kā iesniegt vēstuli</h5>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
+          <li>Atveriet <VidLink href="https://www.vid.gov.lv/lv">www.vid.gov.lv</VidLink>.</li>
+          <li>Atveriet sadaļu <VidLink href="https://www.vid.gov.lv/lv/klientu-apkalposana">Klientu apkalpošana</VidLink> un izvēlieties elektronisko saziņu.</li>
+          <li>Pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink> ar internetbanku, eID karti, eParaksts mobile vai Smart-ID. Ja EDS vēl nelietojat, skatiet <VidLink href="https://eds.vid.gov.lv/helpnewuser/">kā kļūt par EDS lietotāju</VidLink>.</li>
+          <li>Izvēlnē atveriet <span className="font-bold">Sarakste ar VID</span>.</li>
+          <li>Izvēlieties <span className="font-bold">Rakstīt jaunu vēstuli</span>.</li>
+          <li>Norādiet kategoriju: “Konsultācija par nodokļu jautājumiem”, “Akcīzes nodokļa un akcīzes preču aprites jautājumi” vai “Konsultācijas muitas jomā”.</li>
+          <li>Aizpildiet tekstu un, ja vajag, pievienojiet dokumentu. Nospiediet <span className="font-bold">Parakstīt un nosūtīt</span>.</li>
+        </ol>
+        <h5 className="mb-2 mt-4 text-sm font-bold">Kā apskatīt nosūtīto vēstuli un atbildi</h5>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
+          <li>Vēlreiz pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink>.</li>
+          <li>Atveriet <span className="font-bold">Sarakste ar VID</span>.</li>
+          <li>Tur skatiet nosūtīto vēstuli un saņemto atbildi. Skaidrojums par saziņas veidiem ir lapā <VidLink href="https://www.vid.gov.lv/lv/klientu-apkalposana">Klientu apkalpošana</VidLink>.</li>
+        </ol>
+        <h5 className="mb-2 mt-4 text-sm font-bold">Kā iesniegt un apskatīt dokumentu</h5>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
+          <li>EDS sadaļā <span className="font-bold">Uz sākumu</span> nospiediet <span className="font-bold">Sagatavot dokumentu</span> un pēc tam <span className="font-bold">No veidlapas</span>. Tā pati izvēle ir sadaļā <span className="font-bold">Dokumenti</span>.</li>
+          <li>Atveriet vajadzīgo veidlapu, aizpildiet laukus ar *, nospiediet <span className="font-bold">Pārbaudīt un saglabāt</span> un pēc tam <span className="font-bold">Iesniegt</span>.</li>
+          <li>Statusu skatiet sadaļā <span className="font-bold">Dokumenti</span>: Gatavs iesniegšanai, Iesniegts vai Pieņemts.</li>
+          <li>Sīkāks apraksts: <VidLink href="https://www.vid.gov.lv/lv/media/1103/download?attachment=">Kā veidot un iesniegt dokumentus EDS</VidLink>. Par pašu sistēmu: <VidLink href="https://www.vid.gov.lv/lv/elektroniskas-deklaresanas-sistema">Elektroniskās deklarēšanas sistēma</VidLink>.</li>
+        </ol>
+        {wageBook && (
+          <>
+            <h5 className="mb-2 mt-4 text-sm font-bold">Kā saņemt un apskatīt algas nodokļa grāmatiņu</h5>
+            <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
+              <li>Izlasiet skaidrojumu: <VidLink href="https://www.vid.gov.lv/lv/algas-nodokla-gramatina">Algas nodokļa grāmatiņa</VidLink>.</li>
+              <li>Pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink>.</li>
+              <li>Atveriet sadaļu <span className="font-bold">Algas nodokļa grāmatiņa</span>.</li>
+              <li>Nospiediet <span className="font-bold">Atvērt</span> un pēc tam <span className="font-bold">Saņemt algas nodokļa grāmatiņu</span>.</li>
+              <li>Pēc piešķiršanas grāmatiņu apskatiet tajā pašā sadaļā.</li>
+            </ol>
+          </>
+        )}
+      </div>
       <div className="mt-4 flex flex-wrap gap-2">{actions}</div>
     </section>
   );
