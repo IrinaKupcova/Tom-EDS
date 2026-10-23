@@ -666,6 +666,7 @@ function DocForm({ onSent, onCancel, recipient, documentType }: { onSent: (s: Su
       <h3 className="text-base font-bold text-primary">
         Iesniegt dokumentu vai rakstīt speciālistam
       </h3>
+      <p className="mb-4 mt-3 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">Ja vēlaties iesniegt dokumentu, piemēram, iesniegumu, sākumā izvērtējiet, vai šāda strukturēta veidlapa jau nav pieejama EDS sadaļā <span className="font-bold">DOKUMENTI</span> kreisajā navigācijas joslā.</p>
       <p className="mb-4 mt-1 text-xs text-muted-foreground">
         {recipient ? `Adresāts: ${recipient}. ` : ""}Aizpildiet paskaidrojumu un, ja nepieciešams, pievienojiet dokumentu.
       </p>

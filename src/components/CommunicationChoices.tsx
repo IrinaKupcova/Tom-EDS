@@ -6,10 +6,10 @@ import { openStartGate } from "@/components/StartGate";
 export type CommunicationCategory = "chat" | "doc" | "customs" | "history" | "gambling" | "gambling-doc" | "tax-menu" | "customs-menu" | "gambling-menu";
 export type CommunicationDomain = "tax" | "customs" | "gambling";
 
-const domains: { id: CommunicationDomain; title: string; desc: string; icon: LucideIcon }[] = [
-  { id: "tax", title: "Nodokļu joma", desc: "Deklarācijas, nodokļi, atmaksas un konsultācijas", icon: MessageSquareMore },
-  { id: "customs", title: "Muitas joma", desc: "Pasta sūtījumi, muitošana un muitas kontroles punkti", icon: Box },
-  { id: "gambling", title: "Azartspēļu un izložu joma", desc: "Azartspēles, izlozes, licences un atļaujas", icon: Dices },
+const domains: { id: CommunicationDomain; title: string; icon: LucideIcon }[] = [
+  { id: "tax", title: "Nodokļu joma", icon: MessageSquareMore },
+  { id: "customs", title: "Muitas joma", icon: Box },
+  { id: "gambling", title: "Azartspēļu un izložu joma", icon: Dices },
 ];
 
 function ChoiceTile({ title, desc, icon: Icon, note, onClick }: { title: string; desc?: string; icon: LucideIcon; note?: string; onClick: () => void }) {
@@ -38,7 +38,7 @@ export function CommunicationChoices({
     <>
       <div className="grid gap-3 sm:grid-cols-3">
         {domains.map((domain) => (
-          <ChoiceTile key={domain.id} title={domain.title} desc={domain.desc} icon={domain.icon} onClick={() => onOpenDomain(domain.id)} />
+          <ChoiceTile key={domain.id} title={domain.title} icon={domain.icon} onClick={() => onOpenDomain(domain.id)} />
         ))}
       </div>
       {!publicSite && onHistory && (
@@ -68,7 +68,7 @@ export function DomainActions({
       <h3 className="mb-4 text-base font-bold text-primary">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <ChoiceTile title="Sarakstīties ar virtuālo asistentu" icon={MessageSquareMore} note="Atbilde uzreiz · 24/7" onClick={onAssistant} />
-        <ChoiceTile title="Rakstīt VID speciālistam" desc="Iesniegums, sūdzība, ierosinājums vai cita ziņa" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*" onClick={onSpecialist} />
+        <ChoiceTile title="Rakstīt VID speciālistam" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*" onClick={onSpecialist} />
       </div>
       {domain === "customs" && onPoints && (
         <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-primary"><Building2 size={18} /> Muitas kontroles punkti</Button>

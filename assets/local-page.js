@@ -105,6 +105,7 @@
     box.innerHTML =
       '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Iesniegt dokumentu vai rakstīt speciālistam</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
       '<form class="mx-auto w-full max-w-3xl px-4 py-6">' +
+      '<p class="mb-4 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">Ja vēlaties iesniegt dokumentu, piemēram, iesniegumu, sākumā izvērtējiet, vai šāda strukturēta veidlapa jau nav pieejama EDS sadaļā DOKUMENTI kreisajā navigācijas joslā.</p>' +
       '<label class="mb-3 block text-sm text-primary">Tēma<input required data-tema class="input-vid mt-1 w-full"></label>' +
       '<label class="mb-4 block text-sm text-primary">Vēstules teksts<textarea required data-teksts class="input-vid mt-1 h-28 w-full"></textarea></label>' +
       '<div class="flex gap-3"><button type="submit" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Nosūtīt</button><button type="button" data-close class="rounded-md border border-primary px-4 py-2 text-sm text-primary">Aizvērt</button></div>' +
