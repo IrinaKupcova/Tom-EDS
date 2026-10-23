@@ -9,6 +9,7 @@
 
   var channel = "chat";
   var panel = null;
+  var domain = "chat";
 
   var greetings = {
     chat: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?",
@@ -49,12 +50,16 @@
     var el = document.createElement("section");
     el.className = "fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col overflow-hidden bg-background";
     el.innerHTML =
-      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 data-title class="text-base font-bold text-primary">Toms</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
+      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 data-title class="text-base font-bold text-primary">Toms</h2><div class="flex gap-2"><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div></div>' +
       '<div data-log class="min-h-24 flex-1 overflow-y-auto whitespace-pre-wrap px-4 py-3 text-sm"></div>' +
       '<form class="flex gap-2 border-t border-border bg-card p-3"><input data-input class="input-vid min-w-0 flex-1" aria-label="Jautājums" placeholder="Rakstiet jautājumu"><button type="submit" class="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground">Sūtīt</button></form>';
     document.body.appendChild(el);
     el.querySelector("[data-close]").addEventListener("click", function () {
       el.hidden = true;
+    });
+    el.querySelector("[data-back]").addEventListener("click", function () {
+      el.hidden = true;
+      showDomain(domain);
     });
     el.querySelector("form").addEventListener("submit", function (event) {
       event.preventDefault();
@@ -138,10 +143,68 @@
     });
   }
 
+  function showDomain(next) {
+    domain = next;
+    var box = document.getElementById("local-domain");
+    if (!box) {
+      box = document.createElement("section");
+      box.id = "local-domain";
+      box.className = "fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background";
+      document.body.appendChild(box);
+    }
+    var titles = { chat: "Nodokļu joma", customs: "Muitas joma", gambling: "Azartspēļu un izložu joma" };
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">' + titles[next] + '</h2><div class="flex gap-2"><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div></div>' +
+      '<div class="mx-auto grid w-full max-w-3xl gap-3 px-4 py-6 sm:grid-cols-2">' +
+      '<button type="button" data-assistant class="rounded-lg border border-input bg-card p-4 text-left text-sm font-bold text-primary">Sarakstīties ar virtuālo asistentu</button>' +
+      '<button type="button" data-specialist class="rounded-lg border border-input bg-card p-4 text-left text-sm font-bold text-primary">Rakstīt VID speciālistam</button>' +
+      (next === "customs" ? '<button type="button" data-points class="rounded-md border border-primary px-4 py-2 text-sm text-primary sm:col-span-2">Muitas kontroles punkti</button>' : "") +
+      "</div>";
+    box.querySelector("[data-back]").addEventListener("click", function () { box.remove(); });
+    box.querySelector("[data-close]").addEventListener("click", function () { box.remove(); });
+    box.querySelector("[data-assistant]").addEventListener("click", function () {
+      box.remove();
+      openChat(domain);
+    });
+    box.querySelector("[data-specialist]").addEventListener("click", function () {
+      box.remove();
+      if (edsFile()) showAuth();
+      else location.href = "eds/index.html#pieslegties";
+    });
+    var points = box.querySelector("[data-points]");
+    if (points) points.addEventListener("click", function () {
+      box.innerHTML = '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Muitas kontroles punkti</h2><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button></div><div class="mx-auto max-w-3xl px-4 py-6 text-sm leading-6">Punktu sarakstu un darba laiku skatiet <a class="font-bold text-primary underline" href="https://www.vid.gov.lv/lv/muitas-kontroles-un-robezkontroles-punkti" target="_blank" rel="noopener noreferrer">VID vietnē</a>.</div>';
+      box.querySelector("[data-back]").addEventListener("click", function () { showDomain("customs"); });
+    });
+  }
+
+  function showService() {
+    var box = document.getElementById("local-service");
+    if (!box) {
+      box = document.createElement("section");
+      box.id = "local-service";
+      box.className = "fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background";
+      document.body.appendChild(box);
+    }
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Klientu apkalpošana</h2><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button></div>' +
+      '<div class="mx-auto max-w-3xl px-4 py-6 text-sm leading-6"><p>VID Klientu apkalpošanas centri strādā darba dienās no 8:30 līdz 16:30. Tālrunis: 67120000.</p><p class="mt-3"><a class="font-bold text-primary underline" href="https://www.vid.gov.lv/lv/klientu-apkalposana" target="_blank" rel="noopener noreferrer">www.vid.gov.lv/lv/klientu-apkalposana</a></p><button type="button" data-back class="mt-6 rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button></div>';
+    box.querySelectorAll("[data-back]").forEach(function (button) {
+      button.addEventListener("click", function () { box.remove(); });
+    });
+  }
+
   document.addEventListener("click", function (event) {
-    var button = event.target.closest("button");
-    if (!button) return;
+    var button = event.target.closest("button, a");
+    if (!button || button.closest("#local-domain, #local-service, #local-auth")) return;
     var text = button.innerText.replace(/\s+/g, " ");
+    if (text.includes("Klientu apkalpošana") && button.getAttribute("target") !== "_blank") {
+      event.preventDefault();
+      showService();
+      return;
+    }
     if (/speciālistam|Iesniegt dokumentu/.test(text)) {
       event.preventDefault();
       if (edsFile()) showAuth();
@@ -153,8 +216,13 @@
       showForm();
       return;
     }
-    if (/nodokļu jomas|virtuālais asistents TOMS/i.test(text)) openChat("chat");
-    else if (/muitas jomas/.test(text)) openChat("customs");
-    else if (/azartspēļu un izložu jomas/.test(text)) openChat("gambling");
+    if (text.includes("Sarakstīties ar virtuālo asistentu")) {
+      event.preventDefault();
+      openChat(domain);
+      return;
+    }
+    if (text.includes("Nodokļu joma")) showDomain("chat");
+    else if (text.includes("Muitas joma")) showDomain("customs");
+    else if (text.includes("Azartspēļu un izložu joma")) showDomain("gambling");
   });
 })();

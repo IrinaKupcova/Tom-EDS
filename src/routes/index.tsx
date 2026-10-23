@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import {
   Accessibility,
+  ArrowLeft,
   ArrowRight,
   Building2,
   ChevronDown,
@@ -10,16 +11,16 @@ import {
   MapPin,
   Mouse,
   Phone,
-  MessageSquareMore,
-  FilePlus2,
   Search,
   X,
 } from "lucide-react";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
+  DomainActions,
   ViewSwitch,
   type CommunicationCategory,
+  type CommunicationDomain,
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation } from "@/lib/toms";
@@ -88,12 +89,14 @@ const groups = [
   },
 ];
 function VidPage() {
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [chatCategory, setChatCategory] = useState<CommunicationCategory>("chat");
-  const [customsView, setCustomsView] = useState<"choices" | "assistant" | "points">("choices");
-  const [gamblingView, setGamblingView] = useState<"choices" | "assistant">("choices");
+  const [panel, setPanel] = useState<
+    | null
+    | { kind: "domain"; domain: CommunicationDomain; step: "menu" | "assistant" | "points" }
+    | { kind: "service" }
+  >(null);
   const navigate = useNavigate();
   const categoryRef = useRef<CommunicationCategory>("chat");
   categoryRef.current = chatCategory;
@@ -113,47 +116,52 @@ function VidPage() {
       return scripted;
     },
   );
-  const choose = (category: CommunicationCategory) => {
-    if (category === "doc") {
-      navigate({ to: "/eds", search: { category: "doc", no: "auth" } });
-      return;
-    }
+  const assistantCategory = (domain: CommunicationDomain): CommunicationCategory =>
+    domain === "customs" ? "customs" : domain === "gambling" ? "gambling" : "chat";
+  const openDomain = (domain: CommunicationDomain) => setPanel({ kind: "domain", domain, step: "menu" });
+  const startAssistant = (domain: CommunicationDomain) => {
+    const category = assistantCategory(domain);
     setChatCategory(category);
-    setCustomsView(category === "customs" ? "assistant" : "choices");
-    setGamblingView(category === "gambling" ? "assistant" : "choices");
-    setOpen(true);
+    setPanel({ kind: "domain", domain, step: "assistant" });
     chat.reset([
       {
         from: "toms",
         text:
-          category === "customs"
+          domain === "customs"
             ? "Labdien! Palīdzēšu atrast atbildi uz muitas jautājumu. Par ko vēlaties jautāt?"
-            : category === "gambling"
+            : domain === "gambling"
               ? "Labdien! Palīdzēšu atrast atbildi par azartspēlēm un izlozēm. Par ko vēlaties jautāt?"
               : "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?",
       },
     ]);
   };
+  const writeSpecialist = (domain: CommunicationDomain) => {
+    if (domain === "gambling") navigate({ to: "/eds", search: { category: "gambling-doc", no: "auth" } });
+    else if (domain === "customs") navigate({ to: "/eds", search: { category: "doc", no: "auth", document: "Muitas jautājums" } });
+    else navigate({ to: "/eds", search: { category: "doc", no: "auth" } });
+  };
   const auth = () => {
     saveConversation(chat.messages);
     navigate({ to: "/eds", search: { no: "toms" } });
   };
-  const closePanel = () => {
-    setOpen(false);
-    setCustomsView("choices");
-    setGamblingView("choices");
+  const closePanel = () => setPanel(null);
+  const backPanel = () => {
+    if (panel?.kind === "domain" && panel.step !== "menu") setPanel({ kind: "domain", domain: panel.domain, step: "menu" });
+    else setPanel(null);
   };
   const ask = (text: string) => {
     setChatCategory("chat");
-    setOpen(true);
+    setPanel({ kind: "domain", domain: "tax", step: "assistant" });
     chat.send(text);
   };
   const panelTitle =
-    chatCategory === "customs"
-      ? "Saziņa par muitas jautājumiem"
-      : chatCategory === "gambling"
-        ? "Saziņa par azartspēļu un izložu jautājumiem"
-        : "Saziņa ar VID par nodokļu jomas jautājumiem";
+    panel?.kind === "service"
+      ? "Klientu apkalpošana"
+      : panel?.kind === "domain" && panel.domain === "customs"
+        ? "Muitas joma"
+        : panel?.kind === "domain" && panel.domain === "gambling"
+          ? "Azartspēļu un izložu joma"
+          : "Nodokļu joma";
   const chatSurface = (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-card" aria-label="Toms — VID virtuālais asistents">
       <div className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
@@ -189,7 +197,7 @@ function VidPage() {
             },
           ]);
           clearConversation();
-          closePanel();
+          setPanel(null);
         }}
       />
       <header className="border-b border-border bg-card">
@@ -295,11 +303,11 @@ function VidPage() {
                         onClick={(event) => {
                           if (item === "Pasta sūtījumi") {
                             event.preventDefault();
-                            choose("customs");
+                            openDomain("customs");
                           }
                           if (item === "Atbalsts azartspēļu spēlētājiem") {
                             event.preventDefault();
-                            choose("gambling");
+                            openDomain("gambling");
                           }
                         }}
                       >
@@ -338,7 +346,7 @@ function VidPage() {
           </p>
           <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="min-w-0">
-              <CommunicationChoices onChoose={choose} publicSite />
+              <CommunicationChoices onOpenDomain={openDomain} publicSite />
             </div>
             <div id="kontakti">
               <h3 className="mb-3 text-sm font-bold text-primary">Kontakti</h3>
@@ -356,32 +364,34 @@ function VidPage() {
                   Talejas iela 1, Rīga, LV-1978
                 </li>
               </ul>
-              <Button variant="outline" asChild className="mt-6 h-auto whitespace-normal border-primary px-4 py-3 text-primary"><a href="https://www.vid.gov.lv/lv/klientu-apkalposana"><Building2 size={18} /> Klientu apkalpošana</a></Button>
+              <Button variant="outline" className="mt-6 h-auto whitespace-normal border-primary px-4 py-3 text-primary" onClick={() => setPanel({ kind: "service" })}><Building2 size={18} /> Klientu apkalpošana</Button>
             </div>
           </div>
         </div>
       </section>
-      {open && (
+      {panel && (
         <div className="fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background">
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3 sm:px-6">
             <h2 className="text-base font-bold text-primary">{panelTitle}</h2>
-            <Button variant="outline" onClick={closePanel}><X size={16} /> Aizvērt</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={backPanel}><ArrowLeft size={16} /> Atpakaļ</Button>
+              <Button variant="outline" onClick={closePanel}><X size={16} /> Aizvērt</Button>
+            </div>
           </div>
-          {chatCategory === "customs" && (
-            <div className="flex shrink-0 flex-wrap gap-2 border-b border-border bg-card px-4 py-3 sm:px-6" role="group" aria-label="Muitas saziņas iespējas">
-              <Button variant={customsView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("assistant")}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
-              <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "doc", no: "auth" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
-              <Button variant={customsView === "points" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setCustomsView("points")}><Building2 size={17} /> Muitas punkti</Button>
-            </div>
-          )}
-          {chatCategory === "gambling" && (
-            <div className="flex shrink-0 flex-wrap gap-2 border-b border-border bg-card px-4 py-3 sm:px-6" role="group" aria-label="Azartspēļu un izložu saziņas iespējas">
-              <Button variant={gamblingView === "assistant" ? "default" : "outline"} className="h-auto whitespace-normal py-2" onClick={() => setGamblingView("assistant")}><MessageSquareMore size={17} /> Virtuālais asistents</Button>
-              <Button variant="outline" className="h-auto whitespace-normal py-2" asChild><Link to="/eds" search={{ category: "gambling-doc", no: "auth" }}><FilePlus2 size={17} /> Rakstīt speciālistam</Link></Button>
-            </div>
-          )}
           <div className="flex min-h-0 flex-1 flex-col">
-            {chatCategory === "customs" && customsView === "points" ? (
+            {panel.kind === "service" ? (
+              <section className="mx-auto w-full max-w-3xl overflow-auto px-4 py-6">
+                <h3 className="text-base font-bold text-primary">Klientu apkalpošana</h3>
+                <p className="mt-3 text-sm leading-6">VID Klientu apkalpošanas centri strādā darba dienās no 8:30 līdz 16:30. Konsultatīvais tālrunis: <a className="font-bold text-primary underline" href="tel:+37167120000">67120000</a>. E-pasts: <a className="font-bold text-primary underline" href="mailto:vid@vid.gov.lv">vid@vid.gov.lv</a>.</p>
+                <p className="mt-3 text-sm leading-6">Adreses, pierakstu un aktuālo darba laiku skatiet VID vietnes sadaļā. Saite atveras jaunā cilnē, tāpēc šo lapu varat aizvērt ar Atpakaļ.</p>
+                <a className="mt-4 inline-block text-sm font-bold text-primary underline" href="https://www.vid.gov.lv/lv/klientu-apkalposana" target="_blank" rel="noopener noreferrer">www.vid.gov.lv/lv/klientu-apkalposana</a>
+                <div className="mt-6"><Button variant="outline" onClick={backPanel}><ArrowLeft size={16} /> Atpakaļ</Button></div>
+              </section>
+            ) : panel.step === "menu" ? (
+              <div className="min-h-0 flex-1 overflow-auto px-4 py-6 sm:px-6">
+                <DomainActions domain={panel.domain} onAssistant={() => startAssistant(panel.domain)} onSpecialist={() => writeSpecialist(panel.domain)} onPoints={panel.domain === "customs" ? () => setPanel({ kind: "domain", domain: "customs", step: "points" }) : undefined} />
+              </div>
+            ) : panel.step === "points" ? (
               <div className="min-h-0 flex-1 overflow-auto px-4 py-5 sm:px-6"><CustomsPoints requireAuth /></div>
             ) : (
               chatSurface

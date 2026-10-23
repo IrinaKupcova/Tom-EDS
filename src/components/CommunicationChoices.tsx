@@ -1,96 +1,80 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Box, Dices, FilePlus2, History, Home, MessageSquareMore, RotateCcw } from "lucide-react";
+import { Box, Building2, Dices, FilePlus2, History, Home, MessageSquareMore, RotateCcw, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openStartGate } from "@/components/StartGate";
 
-export type CommunicationCategory = "chat" | "doc" | "customs" | "history" | "gambling" | "gambling-doc";
-export const choices = [
-  {
-    id: "chat" as const,
-    title: "Sarakstīties ar VID par nodokļu jomas jautājumiem",
-    desc: "Nodokļi, deklarācijas, konsultācijas un informācijas pieprasījumi",
-    icon: MessageSquareMore,
-    ai: true,
-  },
-  {
-    id: "doc" as const,
-    title: "Rakstīt VID speciālistam",
-    desc: "Iesniegums, paskaidrojums, dokuments vai ziņa VID speciālistam",
-    icon: FilePlus2,
-    ai: false,
-  },
-  {
-    id: "customs" as const,
-    title: "Sarakstīties ar VID par muitas jomas jautājumiem",
-    desc: "Pasta sūtījumi, muitas jautājumi un saziņa ar muitas punktu",
-    icon: Box,
-    ai: true,
-  },
-  {
-    id: "gambling" as const,
-    title: "Sarakstīties ar VID par azartspēļu un izložu jomas jautājumiem",
-    desc: "Azartspēles, izlozes un saziņa ar jomas speciālistu",
-    icon: Dices,
-    ai: true,
-  },
-  {
-    id: "history" as const,
-    title: "Sarakstes vēsture",
-    desc: "Sarunas un speciālistam pārsūtītās vēstules",
-    icon: History,
-    ai: false,
-  },
+export type CommunicationCategory = "chat" | "doc" | "customs" | "history" | "gambling" | "gambling-doc" | "tax-menu" | "customs-menu" | "gambling-menu";
+export type CommunicationDomain = "tax" | "customs" | "gambling";
+
+const domains: { id: CommunicationDomain; title: string; desc: string; icon: LucideIcon }[] = [
+  { id: "tax", title: "Nodokļu joma", desc: "Deklarācijas, nodokļi, atmaksas un konsultācijas", icon: MessageSquareMore },
+  { id: "customs", title: "Muitas joma", desc: "Pasta sūtījumi, muitošana un muitas kontroles punkti", icon: Box },
+  { id: "gambling", title: "Azartspēļu un izložu joma", desc: "Azartspēles, izlozes, licences un atļaujas", icon: Dices },
 ];
 
+function ChoiceTile({ title, desc, icon: Icon, note, onClick }: { title: string; desc: string; icon: LucideIcon; note?: string; onClick: () => void }) {
+  return (
+    <Button variant="outline" onClick={onClick} className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none">
+      <span className="grid size-9 shrink-0 place-items-center rounded-md bg-chat-accent text-chat-primary"><Icon size={20} /></span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
+        <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
+        {note && <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">{note}</span>}
+      </span>
+    </Button>
+  );
+}
+
 export function CommunicationChoices({
-  onChoose,
+  onOpenDomain,
+  onHistory,
   publicSite = false,
 }: {
-  onChoose: (category: CommunicationCategory) => void;
+  onOpenDomain: (domain: CommunicationDomain) => void;
+  onHistory?: () => void;
   publicSite?: boolean;
 }) {
   return (
     <>
-      {[
-        { label: "NODOKĻU JOMA", ids: ["chat", "doc"] },
-        { label: "MUITAS JOMA", ids: publicSite ? ["customs"] : ["customs", "history"] },
-        { label: "AZARTSPĒĻU UN IZLOŽU JOMA", ids: ["gambling"] },
-      ].map((group) => (
-        <section key={group.label} className="mb-4" aria-label={group.label}>
-          <h3 className="mb-2 border-l-4 border-primary pl-2 text-xs font-bold tracking-wide text-primary">{group.label}</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {choices.filter(({ id }) => group.ids.includes(id)).map(({ id, title, desc, icon: Icon, ai }) => (
-              <Button
-                key={id}
-                variant="outline"
-                onClick={() => onChoose(id)}
-                className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none"
-              >
-                <span className="grid size-9 shrink-0 place-items-center rounded-md bg-chat-accent text-chat-primary">
-                  <Icon size={20} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
-                  <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
-                  {id === "chat" && <span className="mt-2 block text-xs leading-[18px] text-primary">Uz Jūsu jautājumiem atbild virtuālais asistents.</span>}
-                  {id === "customs" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu, speciālistu vai muitas punktu.</span>}
-                  {id === "gambling" && <span className="mt-2 block text-xs leading-[18px] text-primary">Izvēlieties saraksti ar virtuālo asistentu vai speciālistu.</span>}
-                  {id === "history" || id === "customs" || id === "gambling" ? null : (
-                    <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">
-                      {ai ? "Atbilde uzreiz · 24/7" : "Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*"}
-                    </span>
-                  )}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </section>
-      ))}
-      <ResponseTimeNote />
+      <div className="grid gap-3 sm:grid-cols-3">
+        {domains.map((domain) => (
+          <ChoiceTile key={domain.id} title={domain.title} desc={domain.desc} icon={domain.icon} onClick={() => onOpenDomain(domain.id)} />
+        ))}
+      </div>
+      {!publicSite && onHistory && (
+        <Button variant="link" onClick={onHistory} className="mt-3 h-auto px-0 text-primary"><History size={16} /> Sarakstes vēsture</Button>
+      )}
       {!publicSite && <p className="mt-2 text-[10px] text-muted-foreground">
         Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti.
       </p>}
     </>
+  );
+}
+
+export function DomainActions({
+  domain,
+  onAssistant,
+  onSpecialist,
+  onPoints,
+}: {
+  domain: CommunicationDomain;
+  onAssistant: () => void;
+  onSpecialist: () => void;
+  onPoints?: () => void;
+}) {
+  const title = domains.find((item) => item.id === domain)?.title;
+  return (
+    <div>
+      <h3 className="mb-4 text-base font-bold text-primary">{title}</h3>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ChoiceTile title="Sarakstīties ar virtuālo asistentu" desc="Atbilde uz vispārīgiem jautājumiem uzreiz" icon={MessageSquareMore} note="Atbilde uzreiz · 24/7" onClick={onAssistant} />
+        <ChoiceTile title="Rakstīt VID speciālistam" desc="Iesniegums, sūdzība, ierosinājums vai cita ziņa" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*" onClick={onSpecialist} />
+      </div>
+      {domain === "customs" && onPoints && (
+        <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-primary"><Building2 size={18} /> Muitas kontroles punkti</Button>
+      )}
+      <ResponseTimeNote />
+    </div>
   );
 }
 

@@ -10,8 +10,10 @@ import { gamblingReply, isGenericReply, toAiHistory, type Msg } from "@/lib/toms
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
+  DomainActions,
   ViewSwitch,
   type CommunicationCategory,
+  type CommunicationDomain,
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,13 +27,14 @@ import {
 export const Route = createFileRoute("/eds")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { no?: string | undefined; category?: CommunicationCategory | undefined; point?: string | undefined } => ({
+  ): { no?: string | undefined; category?: CommunicationCategory | undefined; point?: string | undefined; document?: string | undefined } => ({
     no: typeof s["no"] === "string" ? s["no"] : undefined,
     category:
-      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs" || s["category"] === "history" || s["category"] === "gambling" || s["category"] === "gambling-doc"
+      s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs" || s["category"] === "history" || s["category"] === "gambling" || s["category"] === "gambling-doc" || s["category"] === "tax-menu" || s["category"] === "customs-menu" || s["category"] === "gambling-menu"
         ? s["category"]
         : undefined,
     point: typeof s["point"] === "string" ? s["point"] : undefined,
+    document: typeof s["document"] === "string" && s["document"] in documentSubtypes ? s["document"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -77,7 +80,7 @@ type SavedLetter = Summary & { id: string; date?: string | undefined; cancelled?
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
   const router = useRouter();
-  const { no, category, point } = Route.useSearch();
+  const { no, category, point, document } = Route.useSearch();
   const [tab, setTab] = useState(TABS[4]);
   const [signedIn, setSignedIn] = useState(!no);
   const [authTarget, setAuthTarget] = useState<CommunicationCategory | null>(null);
@@ -91,6 +94,8 @@ function EdsPage() {
   const [email, setEmail] = useState("jberzins@example.lv");
   const [editingEmail, setEditingEmail] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [formPreset, setFormPreset] = useState<string | null | undefined>(undefined);
+  const [showPoints, setShowPoints] = useState(false);
   const [mailSearch, setMailSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const requestText = useRef("");
@@ -144,14 +149,16 @@ function EdsPage() {
     }
     if (saveStep) rememberStep();
     setAuthTarget(null);
+    setShowPoints(false);
+    if (c !== "doc" && c !== "gambling-doc") setFormPreset(undefined);
     activeConversation.current = c === "chat" || c === "customs" || c === "gambling" ? crypto.randomUUID() : null;
     setTab(TABS[4]);
     setCat(c);
     setSent(null);
     requestText.current = "";
-    topic.current = c;
-    if (c === "doc" || c === "history" || c === "gambling-doc") chat.reset([]);
-    else chat.reset([{ from: "toms", text: greetings[c] }]);
+    topic.current = c === "customs" || c === "customs-menu" ? "customs" : c === "gambling" || c === "gambling-menu" || c === "gambling-doc" ? "gambling" : "chat";
+    if (c === "chat" || c === "customs" || c === "gambling") chat.reset([{ from: "toms", text: greetings[c] }]);
+    else chat.reset([]);
   };
   const continueConversation = () => {
     setSignedIn(true);
@@ -249,6 +256,12 @@ function EdsPage() {
     ? "Pieslēgties EDS"
     : sent
       ? "Ziņa nosūtīta"
+      : cat === "tax-menu"
+        ? "Nodokļu joma"
+        : cat === "customs-menu"
+          ? "Muitas joma"
+          : cat === "gambling-menu"
+            ? "Azartspēļu un izložu joma"
       : cat === "doc" || cat === "gambling-doc"
         ? "Iesniegt dokumentu vai rakstīt speciālistam"
         : cat === "history"
@@ -396,7 +409,7 @@ function EdsPage() {
               )}
             </>
           ) : (
-            <CommunicationChoices onChoose={choose} />
+            <CommunicationChoices onOpenDomain={(domain) => choose(domain === "tax" ? "tax-menu" : domain === "customs" ? "customs-menu" : "gambling-menu")} onHistory={() => choose("history")} />
           ))}
         </main>
         {opened && (
@@ -417,11 +430,35 @@ function EdsPage() {
                 <div className="mx-auto max-w-3xl px-4 py-6">
                   <SentResult summary={sent} reply={assistantReply} onHistory={() => choose("history")} actions={<Button variant="outline" onClick={goBack}>Atgriezties</Button>} />
                 </div>
+              ) : cat === "tax-menu" || cat === "customs-menu" || cat === "gambling-menu" ? (
+                <div className="mx-auto max-w-3xl px-4 py-6">
+                  {showPoints ? (
+                    <>
+                      <Button variant="outline" onClick={() => setShowPoints(false)}><ArrowLeft size={16} /> Atpakaļ</Button>
+                      <div className="mt-4"><CustomsPoints /></div>
+                    </>
+                  ) : (
+                    <DomainActions
+                      domain={(cat === "customs-menu" ? "customs" : cat === "gambling-menu" ? "gambling" : "tax") satisfies CommunicationDomain}
+                      onAssistant={() => choose(cat === "customs-menu" ? "customs" : cat === "gambling-menu" ? "gambling" : "chat")}
+                      onSpecialist={() => {
+                        if (cat === "gambling-menu") {
+                          setFormPreset("Azartspēļu un izložu jautājums");
+                          choose("gambling-doc");
+                        } else {
+                          setFormPreset(cat === "customs-menu" ? "Muitas jautājums" : null);
+                          choose("doc");
+                        }
+                      }}
+                      onPoints={cat === "customs-menu" ? () => setShowPoints(true) : undefined}
+                    />
+                  )}
+                </div>
               ) : cat === "history" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} /></div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
-                  <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : {})} />
+                  <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
