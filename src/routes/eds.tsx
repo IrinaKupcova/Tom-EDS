@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen } from "lucide-react";
+import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen, X } from "lucide-react";
 import vidCrestMark from "@/assets/vid-crest-mark.png";
 import fundingImage from "@/assets/eds-funding.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
@@ -83,6 +83,7 @@ function EdsPage() {
   const [authTarget, setAuthTarget] = useState<CommunicationCategory | null>(null);
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
+  const [notice, setNotice] = useState<Summary | null>(null);
   const [outbox, setOutbox] = useState<SavedLetter[]>([]);
   const [conversations, setConversations] = useState<SavedConversation[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -150,7 +151,6 @@ function EdsPage() {
     else chat.reset([{ from: "toms", text: greetings[c] }]);
   };
   const continueConversation = () => {
-    rememberStep();
     setSignedIn(true);
     if (no === "toms") {
       const previous = loadConversation();
@@ -226,12 +226,29 @@ function EdsPage() {
     clearConversation();
     requestText.current = "";
   };
-  const formNotice = sent ? submittedFormNotice(`${sent.tema}\n${sent.teksts}`) : null;
+  const activeSummary = notice ?? sent;
+  const formNotice = activeSummary ? submittedFormNotice(`${activeSummary.tema}\n${activeSummary.teksts}`) : null;
   const submit = (s: Summary) => {
-    rememberStep();
-    setSent(s);
     setOutbox((rows) => [...rows, { ...s, date: new Date().toISOString() }]);
+    if (previousSteps.current.length) {
+      setNotice(s);
+      goBack();
+    } else setSent(s);
   };
+  const opened = !signedIn || (tab === TABS[4] && (sent !== null || cat !== null));
+  const blockTitle = !signedIn
+    ? "Pieslēgties EDS"
+    : sent
+      ? "Ziņa nosūtīta"
+      : cat === "doc" || cat === "gambling-doc"
+        ? "Iesniegt dokumentu vai rakstīt speciālistam"
+        : cat === "history"
+          ? "Sarakstes vēsture"
+          : cat === "customs"
+            ? "Saziņa par muitas jautājumiem"
+            : cat === "gambling"
+              ? "Saziņa par azartspēļu un izložu jautājumiem"
+              : "Saziņa ar VID par nodokļu jomas jautājumiem";
   return (
     <div className="eds-shell flex min-h-screen bg-background pt-12">
       <ViewSwitch onReset={reset} />
@@ -336,14 +353,21 @@ function EdsPage() {
         {searchOpen && <div className="border-b border-border px-[15px] py-2"><input aria-label="Meklēt EDS" autoFocus placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid h-[26px] w-full max-w-[300px] rounded-none text-[10px]" /></div>}
         <main className={`flex-1 ${tab === TABS[4] ? "w-full max-w-[719px] px-[15px] pb-8 pt-7" : "pt-[7px]"}`}>
           <Button variant="link" size="sm" onClick={goBack} className="mb-4 h-auto px-0 text-xs text-primary"><ArrowLeft size={14} /> Atpakaļ</Button>
-          {!signedIn ? (
-            <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
-              <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
-              <p className="mb-5 text-sm leading-6">{no === "toms" ? "Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu." : point ? `Pēc pieslēgšanās varēsiet rakstīt: ${point}.` : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam."}</p>
-              <Button className="w-full" onClick={continueConversation}>Pieslēgties EDS</Button>
-              <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
+          {!opened && notice && (
+            <section role="status" className="mb-5 border border-border bg-card p-4">
+              <CheckCircle2 className="mb-3 text-chat-primary" />
+              <h3 className="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h3>
+              <p className="mt-3 text-sm">Tēma: {notice.tema}</p>
+              <p className="mt-1 text-sm">Adresāts: {notice.struktura}</p>
+              <p className="mt-3 text-xs text-muted-foreground">Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>
+              {formNotice && <p className="mt-2 text-xs text-primary">{formNotice}</p>}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => setNotice(null)}>Aizvērt</Button>
+                <Button variant="outline" onClick={() => { setNotice(null); rememberStep(); setTab("Nosūtne"); }}>Skatīt nosūtnē</Button>
+              </div>
             </section>
-          ) : tab !== TABS[4] ? (
+          )}
+          {signedIn && (tab !== TABS[4] ? (
             <>
               <input aria-label="Meklēt vēstulēs" placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid mb-[7px] ml-[15px] h-[26px] w-[192px] rounded-none px-2 py-0 text-[10px]" />
               {tab === "Nosūtne" && outbox.some((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())) ? (
@@ -363,49 +387,46 @@ function EdsPage() {
               )}
             </>
           ) : (
-            <>
-              <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                {(cat || sent) && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={reset}
-                    className="h-auto p-0 text-xs text-muted-foreground"
-                  >
-                    <ArrowLeft size={12} />
-                    Sākt no jauna
-                  </Button>
-                )}
-              </div>
-              {sent ? (
-                <section role="status" className="border-t border-border py-5">
+            <CommunicationChoices onChoose={choose} />
+          ))}
+        </main>
+        {opened && (
+          <div className="fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3 sm:px-6">
+              <h2 className="text-base font-bold text-primary">{blockTitle}</h2>
+              <Button variant="outline" onClick={goBack}><X size={16} /> Aizvērt</Button>
+            </div>
+            <div className={`min-h-0 flex-1 ${signedIn && !sent && (cat === "chat" || cat === "customs" || cat === "gambling") ? "flex flex-col" : "overflow-auto"}`}>
+              {!signedIn ? (
+                <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
+                  <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
+                  <p className="mb-5 text-sm leading-6">{no === "toms" ? "Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu." : point ? `Pēc pieslēgšanās varēsiet rakstīt: ${point}.` : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam."}</p>
+                  <Button className="w-full" onClick={continueConversation}>Pieslēgties EDS</Button>
+                  <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
+                </section>
+              ) : sent ? (
+                <section role="status" className="mx-auto max-w-3xl px-4 py-6">
                   <CheckCircle2 className="mb-3 text-chat-primary" />
-                  <h3 className="text-lg font-bold text-primary">
-                     Paldies! Jūsu ziņa ir nodota speciālistam.
-                  </h3>
+                  <h3 className="text-lg font-bold text-primary">Paldies! Jūsu ziņa ir nodota speciālistam.</h3>
                   <p className="mt-3 text-sm">Tēma: {sent.tema}</p>
                   <p className="mt-1 text-sm">Adresāts: {sent.struktura}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                     Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.
-                  </p>
+                  <p className="mt-3 text-xs text-muted-foreground">Standarta gadījumos cenšamies atbildēt 10 darba dienu laikā. Šī ir demonstrācija — VID speciālists ziņu nesaņem.</p>
                   {formNotice && <p className="mt-2 text-xs text-primary">{formNotice}</p>}
-                  <Button variant="outline" className="mt-4" onClick={() => { rememberStep(); setTab("Nosūtne"); }}>
-                    Skatīt nosūtnē
-                  </Button>
+                  <Button variant="outline" className="mt-4" onClick={goBack}>Atgriezties</Button>
                 </section>
-              ) : cat === null ? (
-                <CommunicationChoices onChoose={choose} />
               ) : cat === "history" ? (
-                <CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} />
+                <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} /></div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
-                <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : {})} />
+                <div className="mx-auto max-w-3xl px-4 py-6">
+                  <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : {})} />
+                </div>
               ) : (
-                <>
-                  <section className="overflow-hidden rounded-lg border border-border">
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     <div className="flex items-center gap-3 border-b border-border bg-chat-header px-4 py-3">
-                       {cat !== "customs" && cat !== "gambling" && <TomsAvatar size={30} virtualAssistant />}
+                      {cat !== "customs" && cat !== "gambling" && <TomsAvatar size={30} virtualAssistant />}
                       <div>
-                         <h3 className="text-sm font-bold text-primary">Virtuālais asistents</h3>
+                        <h3 className="text-sm font-bold text-primary">Virtuālais asistents</h3>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           <span className="online-dot" />
                           {cat === "customs" ? "Muitas jautājumi" : cat === "gambling" ? "Azartspēļu un izložu jautājumi" : "Nodokļu jomas jautājumi"}
@@ -414,7 +435,8 @@ function EdsPage() {
                     </div>
                     <TomsChat
                       hideAvatar={cat === "customs" || cat === "gambling"}
-                       virtualAssistant
+                      sidePanel
+                      virtualAssistant
                       messages={chat.messages}
                       onSend={chat.send}
                       busy={chat.busy}
@@ -424,57 +446,30 @@ function EdsPage() {
                           ? ["Pasta sūtījumi", "Muitas jautājumi", "Rakstu uz muitas punktu"]
                           : cat === "gambling"
                             ? ["Azartspēļu organizēšana", "Izložu atļauja"]
-                            : [
-                              "Gada ienākumu deklarācija",
-                               "Kāds man ir parāds?",
-                              "Darbības EDS",
-                               "Nepiekrītu aprēķinātajam parādam",
-                            ]
+                            : ["Gada ienākumu deklarācija", "Kāds man ir parāds?", "Darbības EDS", "Nepiekrītu aprēķinātajam parādam"]
                       }
                     />
                   </section>
-                  <section className="mt-4 border-t border-border pt-4">
-                    <h3 className="mb-3 text-xs font-bold text-primary">Citas saziņas iespējas</h3>
+                  <section className="shrink-0 border-t border-border bg-card px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       {cat === "gambling" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-auto whitespace-normal border-primary text-primary"
-                          onClick={() => choose("gambling-doc")}
-                        >
-                          Rakstīt speciālistam
-                        </Button>
+                        <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose("gambling-doc")}>Rakstīt speciālistam</Button>
                       ) : (
                         <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-auto whitespace-normal border-primary text-primary"
-                            onClick={() => choose(cat === "customs" ? "chat" : "customs")}
-                          >
-                            {cat === "customs"
-                              ? "Rakstīt par nodokļu jautājumu"
-                              : "Rakstīt par muitas jautājumu"}
+                          <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose(cat === "customs" ? "chat" : "customs")}>
+                            {cat === "customs" ? "Rakstīt par nodokļu jautājumu" : "Rakstīt par muitas jautājumu"}
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-auto whitespace-normal border-primary text-primary"
-                            onClick={() => choose("doc")}
-                          >
-                            Iesniegt dokumentu vai rakstīt speciālistam
-                          </Button>
+                          <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose("doc")}>Iesniegt dokumentu vai rakstīt speciālistam</Button>
                         </>
                       )}
                     </div>
+                    {cat === "customs" && <div className="mt-3 max-h-48 overflow-auto"><CustomsPoints /></div>}
                   </section>
-                  {cat === "customs" && <section className="mt-4 border-t border-border pt-4"><CustomsPoints /></section>}
-                </>
+                </div>
               )}
-            </>
-          )}
-        </main>
+            </div>
+          </div>
+        )}
         <footer className="eds-footer min-h-[84px] shrink-0 bg-secondary px-[15px] py-3 text-[10px] text-primary">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <a href="tel:67120000" className="flex items-center gap-1 font-bold"><Phone size={15} fill="currentColor" />67120000</a>
