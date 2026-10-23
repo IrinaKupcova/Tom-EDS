@@ -111,7 +111,7 @@ function specialistSummary(source: string, history: Msg[]): Summary {
 
 function handoff(history: Msg[], source: string, mode: "topic" | "uncertain" | "continue", topicTitle?: string): Msg[] {
   const notice = mode === "continue" ? null : structuredFormNotice(source);
-  const offer = `Ja apstiprināt, speciālistam nododu visu šo saraksti. Tā paliek sarakstes vēsturē 30 dienas. Atbilde parasti ir 10 darba dienu laikā, sarežģītos gadījumos līdz 1 mēnesim.${notice ? `\n\n${notice}` : ""}`;
+  const offer = `Visa sarakste speciālistam aiziet tikai tad, ja nospiežat Jā. Līdz tam speciālistam nekas netiek nosūtīts. Pēc apstiprinājuma sarakste paliek arī sarakstes vēsturē 30 dienas. Atbilde parasti ir 10 darba dienu laikā, sarežģītos gadījumos līdz 1 mēnesim.${notice ? `\n\n${notice}` : ""}`;
   const text =
     mode === "continue"
       ? "Papildināju speciālistam nododamo saraksti. Pārbaudiet, vai tajā ir visa saruna."

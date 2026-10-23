@@ -24,7 +24,7 @@ import {
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation, type Summary } from "@/lib/toms";
-import { saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
+import { clearSpecialistDraft, saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { completeUnclearReply, type AssistantDomain } from "@/lib/ai.functions";
@@ -134,16 +134,18 @@ function VidPage() {
       },
     ]);
   };
-  const writeSpecialist = (domain: CommunicationDomain) => {
-    if (domain === "gambling") navigate({ to: "/eds", search: { category: "gambling-doc", no: "auth" } });
-    else if (domain === "customs") navigate({ to: "/eds", search: { category: "doc", no: "auth", document: "Muitas jautājums" } });
-    else navigate({ to: "/eds", search: { category: "doc", no: "auth" } });
+  const writeSpecialist = (domain: CommunicationDomain, fromHandoff = false) => {
+    if (!fromHandoff) clearSpecialistDraft();
+    const confirmed = fromHandoff ? { handoff: "1" as const } : {};
+    if (domain === "gambling") navigate({ to: "/eds", search: { category: "gambling-doc", no: "auth", ...confirmed } });
+    else if (domain === "customs") navigate({ to: "/eds", search: { category: "doc", no: "auth", document: "Muitas jautājums", ...confirmed } });
+    else navigate({ to: "/eds", search: { category: "doc", no: "auth", ...confirmed } });
   };
   const handoff = (summary: Summary) => {
     const category = categoryRef.current === "customs" || categoryRef.current === "gambling" ? categoryRef.current : "chat";
     upsertChatThread({ id: threadId.current, category, messages: chat.messages });
     saveSpecialistDraft(summary);
-    writeSpecialist(category === "gambling" ? "gambling" : category === "customs" ? "customs" : "tax");
+    writeSpecialist(category === "gambling" ? "gambling" : category === "customs" ? "customs" : "tax", true);
   };
   const auth = () => {
     saveConversation(chat.messages);

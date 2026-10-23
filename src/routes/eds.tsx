@@ -28,8 +28,9 @@ import {
 export const Route = createFileRoute("/eds")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { no?: string | undefined; category?: CommunicationCategory | undefined; point?: string | undefined; document?: string | undefined } => ({
+  ): { no?: string | undefined; category?: CommunicationCategory | undefined; point?: string | undefined; document?: string | undefined; handoff?: "1" | undefined } => ({
     no: typeof s["no"] === "string" ? s["no"] : undefined,
+    handoff: s["handoff"] === "1" ? "1" : undefined,
     category:
       s["category"] === "chat" || s["category"] === "doc" || s["category"] === "customs" || s["category"] === "history" || s["category"] === "gambling" || s["category"] === "gambling-doc" || s["category"] === "tax-menu" || s["category"] === "customs-menu" || s["category"] === "gambling-menu"
         ? s["category"]
@@ -81,7 +82,7 @@ type SavedLetter = Summary & { id: string; date?: string | undefined; cancelled?
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
   const router = useRouter();
-  const { no, category, point, document } = Route.useSearch();
+  const { no, category, point, document, handoff } = Route.useSearch();
   const [tab, setTab] = useState(TABS[4]);
   const [signedIn, setSignedIn] = useState(!no);
   const [authTarget, setAuthTarget] = useState<CommunicationCategory | null>(null);
@@ -96,6 +97,11 @@ function EdsPage() {
   const [editingEmail, setEditingEmail] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [formPreset, setFormPreset] = useState<string | null | undefined>(undefined);
+  const [handoffLetter, setHandoffLetter] = useState(() => (handoff === "1" ? loadSpecialistDraft()?.teksts ?? "" : ""));
+  const blankSpecialistLetter = () => {
+    clearSpecialistDraft();
+    setHandoffLetter("");
+  };
   const [showPoints, setShowPoints] = useState(false);
   const [mailSearch, setMailSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -438,6 +444,7 @@ function EdsPage() {
                       domain={(cat === "customs-menu" ? "customs" : cat === "gambling-menu" ? "gambling" : "tax") satisfies CommunicationDomain}
                       onAssistant={() => choose(cat === "customs-menu" ? "customs" : cat === "gambling-menu" ? "gambling" : "chat")}
                       onSpecialist={() => {
+                        blankSpecialistLetter();
                         if (cat === "gambling-menu") {
                           setFormPreset("Azartspēļu un izložu jautājums");
                           choose("gambling-doc");
@@ -454,7 +461,7 @@ function EdsPage() {
                 <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} /></div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
-                  <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
+                  <DocForm initialText={handoffLetter} onSent={(summary) => { setHandoffLetter(""); submit(summary); }} onCancel={() => { blankSpecialistLetter(); goBack(); }} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
@@ -489,13 +496,13 @@ function EdsPage() {
                   <section className="shrink-0 border-t border-border bg-card px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       {cat === "gambling" ? (
-                        <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose("gambling-doc")}>Rakstīt speciālistam</Button>
+                        <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => { blankSpecialistLetter(); choose("gambling-doc"); }}>Rakstīt speciālistam</Button>
                       ) : (
                         <>
                           <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose(cat === "customs" ? "chat" : "customs")}>
                             {cat === "customs" ? "Rakstīt par nodokļu jautājumu" : "Rakstīt par muitas jautājumu"}
                           </Button>
-                          <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose("doc")}>Iesniegt dokumentu vai rakstīt speciālistam</Button>
+                          <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => { blankSpecialistLetter(); choose("doc"); }}>Iesniegt dokumentu vai rakstīt speciālistam</Button>
                         </>
                       )}
                     </div>
@@ -641,10 +648,10 @@ function SentResult({ summary, reply, actions, onHistory }: { summary: Summary; 
   );
 }
 
-function DocForm({ onSent, onCancel, recipient, documentType }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string; documentType?: string }) {
+function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string; documentType?: string; initialText?: string }) {
   const [type, setType] = useState(documentType ?? (recipient ? "Muitas jautājums" : ""));
   const [subtype, setSubtype] = useState("");
-  const [text, setText] = useState(() => loadSpecialistDraft()?.teksts ?? "");
+  const [text, setText] = useState(initialText);
   const [error, setError] = useState("");
   return (
     <form

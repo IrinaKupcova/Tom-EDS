@@ -92,7 +92,7 @@ export function TomsChat({
                       onSubmitSummary &&
                       i === messages.length - 1 && (
                         <div className="mt-2 border-t border-border pt-3 text-xs">
-                          <p className="mb-2 font-bold text-primary">Speciālistam tiks nodota visa sarakste</p>
+                          <p className="mb-2 font-bold text-primary">Visa sarakste speciālistam aiziet tikai pēc pogas Jā</p>
                           <dl className="grid grid-cols-[85px_minmax(0,1fr)] gap-2">
                             <dt>Kategorija</dt>
                             <dd>{m.summary.kategorija}</dd>

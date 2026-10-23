@@ -30,7 +30,10 @@
   function remember(text, reply, handoff) {
     dialogue.push("Klients: " + text);
     dialogue.push("Toms: " + reply);
-    if (!handoff) return reply;
+    return { reply: reply, handoff: handoff };
+  }
+
+  function acceptHandoff() {
     try {
       sessionStorage.setItem("vid-eds-specialist-draft", JSON.stringify({
         kategorija: "Vispārīgi jautājumi",
@@ -38,8 +41,9 @@
         struktura: "Konsultāciju pārvalde",
         teksts: dialogue.join("\n\n"),
       }));
-    } catch (error) { /* The file preview can continue without stored history. */ }
-    return reply;
+    } catch (error) { /* The confirmed letter can still be shown in this page. */ }
+    if (edsFile()) showAuth();
+    else location.href = "eds/index.html#pieslegties";
   }
 
   function answer(text) {
@@ -49,7 +53,7 @@
       if (complexTopics[i][1].test(t)) topic = complexTopics[i][0];
     }
     if (topic) {
-      return remember(text, "Šo tēmu es vērtēju kā sarežģītu: " + topic + ". Zvaniet 67120000 vai atveriet “Rakstīt VID speciālistam” — speciālistam tiks nodota visa sarakste. Saruna paliek sarakstes vēsturē 30 dienas.", true);
+      return remember(text, "Šo tēmu es vērtēju kā sarežģītu: " + topic + ". Zvaniet 67120000 vai nospiediet Jā. Visa sarakste speciālistam aiziet tikai pēc šī apstiprinājuma.", true);
     }
     if (/iesniegt|iesnieg|veidlap|izziņ/.test(t)) {
       return remember(text, "Šo varat izdarīt pats. EDS kreisajā joslā atveriet Dokumenti → Sagatavot dokumentu → No veidlapas. Kur palasīt: https://www.vid.gov.lv/lv un https://eds.vid.gov.lv/login/ .", false);
@@ -66,7 +70,7 @@
     if (channel === "gambling" || /azart|izlož|izloz|licenc|atļauj/.test(t)) {
       return remember(text, "Par azartspēlēm un izlozēm aktuālo kārtību skatiet https://www.vid.gov.lv/lv .", false);
     }
-    return remember(text, "Uz šo man nav viennozīmīgas atbildes. Zvaniet 67120000 vai atveriet “Rakstīt VID speciālistam” — speciālistam tiks nodota visa sarakste.", true);
+    return remember(text, "Uz šo man nav viennozīmīgas atbildes. Zvaniet 67120000 vai nospiediet Jā. Visa sarakste speciālistam aiziet tikai pēc šī apstiprinājuma.", true);
   }
 
   function openChat(next) {
@@ -100,7 +104,19 @@
       var text = input.value.trim();
       if (!text) return;
       var log = el.querySelector("[data-log]");
-      log.textContent += "\n\nJūs: " + text + "\n\nToms: " + answer(text);
+      var result = answer(text);
+      var block = document.createElement("div");
+      block.className = "mt-4 whitespace-pre-wrap";
+      block.textContent = "Jūs: " + text + "\n\nToms: " + result.reply;
+      if (result.handoff) {
+        var yes = document.createElement("button");
+        yes.type = "button";
+        yes.className = "mt-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground";
+        yes.textContent = "Jā, pārsūtīt VID speciālistam";
+        yes.addEventListener("click", acceptHandoff);
+        block.appendChild(yes);
+      }
+      log.appendChild(block);
       input.value = "";
       log.scrollTop = log.scrollHeight;
     });
@@ -145,7 +161,10 @@
       "</form>";
     var draft = "";
     try { draft = JSON.parse(sessionStorage.getItem("vid-eds-specialist-draft") || "null"); } catch (error) { draft = ""; }
-    if (draft && draft.teksts) box.querySelector("[data-teksts]").value = draft.teksts;
+    if (draft && draft.teksts) {
+      box.querySelector("[data-teksts]").value = draft.teksts;
+      sessionStorage.removeItem("vid-eds-specialist-draft");
+    }
     box.querySelectorAll("[data-close]").forEach(function (button) {
       button.addEventListener("click", function () {
         box.remove();
@@ -206,6 +225,7 @@
     });
     box.querySelector("[data-specialist]").addEventListener("click", function () {
       box.remove();
+      sessionStorage.removeItem("vid-eds-specialist-draft");
       if (edsFile()) showAuth();
       else location.href = "eds/index.html#pieslegties";
     });
@@ -242,8 +262,9 @@
       showService();
       return;
     }
-    if (/speciālistam|Iesniegt dokumentu/.test(text)) {
+    if (/Rakstīt VID speciālistam|Rakstīt speciālistam|Iesniegt dokumentu/.test(text)) {
       event.preventDefault();
+      sessionStorage.removeItem("vid-eds-specialist-draft");
       if (edsFile()) showAuth();
       else location.href = "eds/index.html#pieslegties";
       return;
