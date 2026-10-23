@@ -9,7 +9,7 @@ export const documentSubtypes: Record<string, string[]> = {
 };
 
 const WHERE =
-  "To var atvērt EDS sadaļā “Sarakste ar VID” → “Rakstīt jaunu vēstuli” → “Iesniegt dokumentu vai rakstīt speciālistam”.";
+  "To var atrast EDS sadaļā “Dokumenti” → “Sagatavot dokumentu” → “No veidlapas”, meklējot veidlapu pēc nosaukuma.";
 
 type StructuredForm = { type: string; subtype: string; test: (text: string) => boolean };
 
@@ -57,5 +57,8 @@ export function structuredFormNotice(context: string): string | null {
 export function submittedFormNotice(context: string): string | null {
   const form = matchStructuredForm(context);
   if (!form) return null;
+  if (form.subtype.includes("algas nodokļa grāmatiņas")) {
+    return "Vēršam uzmanību, ka šo pakalpojumu varat izdarīt paši EDS sadaļā “Algas nodokļa grāmatiņa”.";
+  }
   return `Vēršam uzmanību, ka šādam pakalpojumam ir veidlapa EDS: “${form.subtype}”. ${WHERE}`;
 }

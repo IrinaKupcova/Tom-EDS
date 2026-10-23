@@ -72,8 +72,8 @@ const greetings = {
   gambling:
     "Labdien! Esmu VID virtuālais asistents. Atbildu uz azartspēļu un izložu jautājumiem. Tikai sarežģītus jautājumus nododu jomas speciālistam. Šajā prototipā atbildes ir simulētas.",
 };
-type SavedConversation = { id: string; category: "chat" | "customs" | "gambling"; messages: Msg[]; date?: string | undefined };
-type SavedLetter = Summary & { date?: string | undefined };
+type SavedConversation = { id: string; category: "chat" | "customs" | "gambling"; messages: Msg[]; date?: string | undefined; cancelled?: boolean | undefined };
+type SavedLetter = Summary & { id: string; date?: string | undefined; cancelled?: boolean | undefined };
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
   const router = useRouter();
@@ -187,8 +187,8 @@ function EdsPage() {
       const stored = sessionStorage.getItem(historyStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs" || row.category === "gambling") && Array.isArray(row.messages)));
-        if (Array.isArray(parsed.outbox)) setOutbox(parsed.outbox);
+        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs" || row.category === "gambling") && Array.isArray(row.messages)).map((row: SavedConversation) => ({ ...row, cancelled: row.cancelled === true })));
+        if (Array.isArray(parsed.outbox)) setOutbox(parsed.outbox.filter((row: SavedLetter) => row && typeof row.tema === "string").map((row: SavedLetter) => ({ ...row, id: typeof row.id === "string" ? row.id : crypto.randomUUID(), cancelled: row.cancelled === true })));
       }
     } catch { /* An unavailable or expired browser session starts empty. */ }
     setHistoryLoaded(true);
@@ -197,7 +197,7 @@ function EdsPage() {
     const id = activeConversation.current;
     if (!historyLoaded || !id || !chat.messages.some((m) => m.from === "user")) return;
     const row: SavedConversation = { id, category: topic.current === "customs" ? "customs" : topic.current === "gambling" ? "gambling" : "chat", messages: chat.messages, date: new Date().toISOString() };
-    setConversations((rows) => rows.some((item) => item.id === id) ? rows.map((item) => item.id === id ? { ...row, date: item.date } : item) : [...rows, row]);
+    setConversations((rows) => rows.some((item) => item.id === id) ? rows.map((item) => item.id === id ? { ...row, date: item.date, cancelled: item.cancelled } : item) : [...rows, row]);
   }, [chat.messages, historyLoaded]);
   useEffect(() => {
     if (!historyLoaded) return;
@@ -231,7 +231,7 @@ function EdsPage() {
   };
   const [assistantReply, setAssistantReply] = useState<string | null>(null);
   const submit = (s: Summary) => {
-    setOutbox((rows) => [...rows, { ...s, date: new Date().toISOString() }]);
+    setOutbox((rows) => [...rows, { ...s, id: crypto.randomUUID(), date: new Date().toISOString() }]);
     setAssistantReply(null);
     const domain: AssistantDomain = /muit/i.test(`${s.kategorija} ${s.tema} ${s.teksts}`) ? "customs" : /azart|izlož|izloz/i.test(`${s.kategorija} ${s.tema} ${s.teksts}`) ? "gambling" : "tax";
     askAssistant({ data: { history: [{ role: "user", content: s.teksts }], domain } })
@@ -242,6 +242,8 @@ function EdsPage() {
       goBack();
     } else setSent(s);
   };
+  const cancelLetter = (id: string) => setOutbox((rows) => rows.map((row) => row.id === id ? { ...row, cancelled: true } : row));
+  const cancelConversation = (id: string) => setConversations((rows) => rows.map((row) => row.id === id ? { ...row, cancelled: true } : row));
   const opened = !signedIn || (tab === TABS[4] && (sent !== null || cat !== null));
   const blockTitle = !signedIn
     ? "Pieslēgties EDS"
@@ -364,6 +366,7 @@ function EdsPage() {
             <SentResult
               summary={notice}
               reply={assistantReply}
+              onHistory={() => choose("history")}
               actions={
                 <>
                   <Button variant="outline" onClick={() => { setNotice(null); setAssistantReply(null); }}>Aizvērt</Button>
@@ -377,13 +380,14 @@ function EdsPage() {
               <input aria-label="Meklēt vēstulēs" placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid mb-[7px] ml-[15px] h-[26px] w-[192px] rounded-none px-2 py-0 text-[10px]" />
               {tab === "Nosūtne" && outbox.some((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())) ? (
                 <div className="space-y-2 px-[15px]">
-                  {outbox.filter((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())).map((s, i) => (
-                    <div key={i} className="border-b border-border py-3">
+                  {outbox.filter((s) => `${s.tema} ${s.teksts}`.toLowerCase().includes(mailSearch.toLowerCase())).map((s) => (
+                    <div key={s.id} className="border-b border-border py-3">
                       <p className="text-sm font-bold text-primary">{s.tema}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {s.struktura} · Nosūtīts prototipā
+                        {s.struktura} · {s.cancelled ? "Ziņojums atcelts" : "Nosūtīts prototipā"}
                       </p>
                       <p className="mt-2 whitespace-pre-wrap text-sm">{s.teksts}</p>
+                      {!s.cancelled && <Button variant="outline" size="sm" className="mt-3" onClick={() => cancelLetter(s.id)}>Atcelt ziņojumu</Button>}
                     </div>
                   ))}
                 </div>
@@ -411,10 +415,10 @@ function EdsPage() {
                 </section>
               ) : sent ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
-                  <SentResult summary={sent} reply={assistantReply} actions={<Button variant="outline" onClick={goBack}>Atgriezties</Button>} />
+                  <SentResult summary={sent} reply={assistantReply} onHistory={() => choose("history")} actions={<Button variant="outline" onClick={goBack}>Atgriezties</Button>} />
                 </div>
               ) : cat === "history" ? (
-                <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} /></div>
+                <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} /></div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
                   <DocForm onSent={submit} onCancel={goBack} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : {})} />
@@ -502,10 +506,10 @@ function HistoryDate({ date }: { date?: string | undefined }) {
   if (!date || Number.isNaN(Date.parse(date))) return <p className="mb-1 text-xs text-muted-foreground">Datums nav saglabāts</p>;
   return <time dateTime={date} className="mb-1 block text-xs text-muted-foreground">{new Date(date).toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Riga" })}</time>;
 }
-function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: SavedLetter[]; conversations: SavedConversation[]; onResume: (row: SavedConversation) => void }) {
+function CorrespondenceHistory({ outbox, conversations, onResume, onCancelLetter, onCancelConversation }: { outbox: SavedLetter[]; conversations: SavedConversation[]; onResume: (row: SavedConversation) => void; onCancelLetter: (id: string) => void; onCancelConversation: (id: string) => void }) {
   return <section aria-labelledby="history-title">
     <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
-    <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules</p>
+    <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules. Ziņojumu var atcelt ar pogu pie ieraksta.</p>
     <div className="mb-5 flex flex-wrap gap-2 text-xs font-bold text-primary-foreground">
       <span className="rounded bg-primary px-2 py-1">Parastos gadījumos — 10 darba dienas</span>
       <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — līdz vienam mēnesim</span>
@@ -517,13 +521,14 @@ function CorrespondenceHistory({ outbox, conversations, onResume }: { outbox: Sa
         <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Saruna ar virtuālo asistentu</summary>
           <div className="mt-3 space-y-3">{row.messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
         </details>
-        <Button variant="outline" size="sm" className="mt-3" onClick={() => onResume(row)}>Turpināt saraksti</Button>
+        {row.cancelled ? <p className="mt-3 text-sm font-bold text-primary">Ziņojums atcelts</p> : <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => onResume(row)}>Turpināt saraksti</Button><Button variant="outline" size="sm" onClick={() => onCancelConversation(row.id)}>Atcelt ziņojumu</Button></div>}
       </article>)}
-      {outbox.map((item, index) => <article key={`letter-${index}`} className="py-4">
+      {outbox.map((item) => <article key={item.id} className="py-4">
         <HistoryDate date={item.date} />
         <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
-        <p className="mt-1 text-xs text-muted-foreground">Speciālistam pārsūtīta vēstule · {item.struktura}</p>
+        <p className="mt-1 text-xs text-muted-foreground">Speciālistam pārsūtīta vēstule · {item.struktura}{item.cancelled ? " · Ziņojums atcelts" : ""}</p>
         <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>
+        {!item.cancelled && <Button variant="outline" size="sm" className="mt-3" onClick={() => onCancelLetter(item.id)}>Atcelt ziņojumu</Button>}
       </article>)}
       {!conversations.length && !outbox.length && <p className="py-4 text-sm text-muted-foreground">Nav sarunu vai speciālistam pārsūtītu vēstuļu.</p>}
     </div>
@@ -534,11 +539,13 @@ function VidLink({ href, children }: { href: string; children: ReactNode }) {
   return <a href={href} target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline">{children}</a>;
 }
 
-function SentResult({ summary, reply, actions }: { summary: Summary; reply: string | null; actions: ReactNode }) {
-  const context = `${summary.tema}\n${summary.teksts}`;
+function SentResult({ summary, reply, actions, onHistory }: { summary: Summary; reply: string | null; actions: ReactNode; onHistory: () => void }) {
+  const context = `${summary.tema}\n${summary.teksts} ${summary.kategorija}`;
   const notice = submittedFormNotice(context);
   const form = matchStructuredForm(context);
   const wageBook = form?.subtype.includes("algas nodokļa grāmatiņas");
+  const debt = /parād|parad/i.test(context);
+  const customs = /muit|sūtījum|paka/i.test(context);
   return (
     <section role="status" className="mb-5 border border-border bg-card p-4">
       <CheckCircle2 className="mb-3 text-chat-primary" />
@@ -554,44 +561,47 @@ function SentResult({ summary, reply, actions }: { summary: Summary; reply: stri
           <p className="mt-1 text-lg font-bold">1 mēnesis</p>
         </div>
       </div>
+      <p className="mt-4 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">Ja vēlaties atsaukt savu ziņojumu, varat to izdarīt sadaļā <button type="button" className="font-bold text-primary underline" onClick={onHistory}>Sarakstes vēsture</button>.</p>
       {notice && <p className="mt-4 rounded-md border-2 border-primary bg-warning-surface px-4 py-3 text-sm font-semibold leading-6 text-primary">{notice}</p>}
       <div className="mt-5">
         <h4 className="text-sm font-bold uppercase tracking-wide text-primary">Ieteikumi</h4>
-        <h5 className="mb-2 mt-4 text-sm font-bold">Kā iesniegt vēstuli</h5>
+        <p className="mt-2 text-sm leading-6">Daudzas darbības varat izdarīt paši — sameklēt skaidrojumu, iesniegt veidlapu vai izgūt izziņu.</p>
+        <h5 className="mb-2 mt-4 text-sm font-bold">Kā atrast informāciju</h5>
         <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
-          <li>Atveriet <VidLink href="https://www.vid.gov.lv/lv">www.vid.gov.lv</VidLink>.</li>
-          <li>Atveriet sadaļu <VidLink href="https://www.vid.gov.lv/lv/klientu-apkalposana">Klientu apkalpošana</VidLink> un izvēlieties elektronisko saziņu.</li>
-          <li>Pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink> ar internetbanku, eID karti, eParaksts mobile vai Smart-ID. Ja EDS vēl nelietojat, skatiet <VidLink href="https://eds.vid.gov.lv/helpnewuser/">kā kļūt par EDS lietotāju</VidLink>.</li>
-          <li>Izvēlnē atveriet <span className="font-bold">Sarakste ar VID</span>.</li>
-          <li>Izvēlieties <span className="font-bold">Rakstīt jaunu vēstuli</span>.</li>
-          <li>Norādiet kategoriju: “Konsultācija par nodokļu jautājumiem”, “Akcīzes nodokļa un akcīzes preču aprites jautājumi” vai “Konsultācijas muitas jomā”.</li>
-          <li>Aizpildiet tekstu un, ja vajag, pievienojiet dokumentu. Nospiediet <span className="font-bold">Parakstīt un nosūtīt</span>.</li>
+          <li>Atveriet <VidLink href="https://www.vid.gov.lv/lv">www.vid.gov.lv</VidLink> un meklētājā ierakstiet tēmu.</li>
+          <li>Saziņas veidi un darba laiks ir sadaļā <VidLink href="https://www.vid.gov.lv/lv/klientu-apkalposana">Klientu apkalpošana</VidLink>.</li>
+          {customs && <li>Muitas kontroles punkti un darba laiks: <VidLink href="https://www.vid.gov.lv/lv/muitas-kontroles-un-robezkontroles-punkti">Muitas kontroles un robežkontroles punkti</VidLink>.</li>}
+          {debt && <li>Publiski pieejamā informācija par parādiem virs 150 euro: <VidLink href="https://www.vid.gov.lv/lv/nodoklu-paradnieki">Nodokļu parādnieki</VidLink>. Savu parādu skatiet pēc pieslēgšanās EDS.</li>}
+          {wageBook && <li>Skaidrojums: <VidLink href="https://www.vid.gov.lv/lv/algas-nodokla-gramatina">Algas nodokļa grāmatiņa</VidLink>.</li>}
         </ol>
-        <h5 className="mb-2 mt-4 text-sm font-bold">Kā apskatīt nosūtīto vēstuli un atbildi</h5>
+        <h5 className="mb-2 mt-4 text-sm font-bold">Kā iesniegt veidlapu</h5>
         <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
-          <li>Vēlreiz pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink>.</li>
-          <li>Atveriet <span className="font-bold">Sarakste ar VID</span>.</li>
-          <li>Tur skatiet nosūtīto vēstuli un saņemto atbildi. Skaidrojums par saziņas veidiem ir lapā <VidLink href="https://www.vid.gov.lv/lv/klientu-apkalposana">Klientu apkalpošana</VidLink>.</li>
-        </ol>
-        <h5 className="mb-2 mt-4 text-sm font-bold">Kā iesniegt un apskatīt dokumentu</h5>
-        <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
-          <li>EDS sadaļā <span className="font-bold">Uz sākumu</span> nospiediet <span className="font-bold">Sagatavot dokumentu</span> un pēc tam <span className="font-bold">No veidlapas</span>. Tā pati izvēle ir sadaļā <span className="font-bold">Dokumenti</span>.</li>
-          <li>Atveriet vajadzīgo veidlapu, aizpildiet laukus ar *, nospiediet <span className="font-bold">Pārbaudīt un saglabāt</span> un pēc tam <span className="font-bold">Iesniegt</span>.</li>
+          <li>Pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink>. Ja EDS vēl nelietojat, skatiet <VidLink href="https://eds.vid.gov.lv/helpnewuser/">kā kļūt par EDS lietotāju</VidLink>.</li>
+          {form && !wageBook && <li>EDS veidlapas nosaukums: <span className="font-bold">“{form.subtype}”</span> (dokumenta veids: {form.type}).</li>}
+          <li>Sadaļā <span className="font-bold">Uz sākumu</span> nospiediet <span className="font-bold">Sagatavot dokumentu</span> un pēc tam <span className="font-bold">No veidlapas</span>. Tā pati izvēle ir sadaļā <span className="font-bold">Dokumenti</span>.</li>
+          <li>Atveriet veidlapu, aizpildiet laukus ar *, nospiediet <span className="font-bold">Pārbaudīt un saglabāt</span> un pēc tam <span className="font-bold">Iesniegt</span>.</li>
           <li>Statusu skatiet sadaļā <span className="font-bold">Dokumenti</span>: Gatavs iesniegšanai, Iesniegts vai Pieņemts.</li>
-          <li>Sīkāks apraksts: <VidLink href="https://www.vid.gov.lv/lv/media/1103/download?attachment=">Kā veidot un iesniegt dokumentus EDS</VidLink>. Par pašu sistēmu: <VidLink href="https://www.vid.gov.lv/lv/elektroniskas-deklaresanas-sistema">Elektroniskās deklarēšanas sistēma</VidLink>.</li>
+          <li>Sīkāk: <VidLink href="https://www.vid.gov.lv/lv/media/1103/download?attachment=">Kā veidot un iesniegt dokumentus EDS</VidLink> un <VidLink href="https://www.vid.gov.lv/lv/elektroniskas-deklaresanas-sistema">Elektroniskās deklarēšanas sistēma</VidLink>.</li>
         </ol>
         {wageBook && (
           <>
-            <h5 className="mb-2 mt-4 text-sm font-bold">Kā saņemt un apskatīt algas nodokļa grāmatiņu</h5>
+            <h5 className="mb-2 mt-4 text-sm font-bold">Algas nodokļa grāmatiņa</h5>
             <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
-              <li>Izlasiet skaidrojumu: <VidLink href="https://www.vid.gov.lv/lv/algas-nodokla-gramatina">Algas nodokļa grāmatiņa</VidLink>.</li>
               <li>Pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink>.</li>
               <li>Atveriet sadaļu <span className="font-bold">Algas nodokļa grāmatiņa</span>.</li>
               <li>Nospiediet <span className="font-bold">Atvērt</span> un pēc tam <span className="font-bold">Saņemt algas nodokļa grāmatiņu</span>.</li>
-              <li>Pēc piešķiršanas grāmatiņu apskatiet tajā pašā sadaļā.</li>
+              <li>Pēc piešķiršanas grāmatiņu apskatiet tajā pašā sadaļā. Skaidrojums: <VidLink href="https://www.vid.gov.lv/lv/algas-nodokla-gramatina">www.vid.gov.lv/lv/algas-nodokla-gramatina</VidLink>.</li>
             </ol>
           </>
         )}
+        <h5 className="mb-2 mt-4 text-sm font-bold">Kā izgūt izziņu</h5>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-6">
+          <li>Pieslēdzieties <VidLink href="https://eds.vid.gov.lv/login/">EDS</VidLink>.</li>
+          <li>Atveriet sadaļu <span className="font-bold">Izziņas</span>.</li>
+          <li>Nospiediet <span className="font-bold">Sagatavot jaunu izziņu</span> un izvēlieties vajadzīgo izziņu, piemēram, par nodokļu parādiem vai nodokļu nomaksas stāvokli.</li>
+          <li>Norādiet datumu, pārbaudiet datus un nospiediet <span className="font-bold">Saglabāt izziņu</span>. PDF saglabājat ar <span className="font-bold">Lejupielādēt izziņas failu</span>.</li>
+          <li>Iepriekš pieprasītās izziņas paliek sadaļas <span className="font-bold">Izziņas</span> sarakstā. Sīkāk: <VidLink href="https://www.vid.gov.lv/lv/media/1089/download?attachment=">Kā lietot EDS sadaļu “Izziņas”</VidLink>.</li>
+        </ol>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">{actions}</div>
     </section>
