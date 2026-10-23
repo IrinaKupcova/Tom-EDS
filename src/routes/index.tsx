@@ -27,8 +27,7 @@ import { gamblingReply, publicReply, saveConversation, clearConversation, type S
 import { saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
-import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
-import { isGenericReply, toAiHistory } from "@/lib/toms";
+import { completeUnclearReply, type AssistantDomain } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -106,16 +105,8 @@ function VidPage() {
     [{ from: "toms", text: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?" }],
     async (text, _turn, history) => {
       const scripted = categoryRef.current === "gambling" ? gamblingReply(text, history) : publicReply(text, history);
-      if (!isGenericReply(scripted)) return scripted;
       const domain: AssistantDomain = categoryRef.current === "customs" ? "customs" : categoryRef.current === "gambling" ? "gambling" : "tax";
-      try {
-        const { text: answer } = await askAssistant({ data: { history: toAiHistory(history), domain } });
-        const usable = usableAssistantAnswer(answer);
-        if (usable) return [{ from: "toms" as const, text: usable }];
-      } catch {
-        /* The scripted reply stays available when the model cannot be reached. */
-      }
-      return scripted;
+      return completeUnclearReply(scripted, history, domain);
     },
   );
   useEffect(() => {

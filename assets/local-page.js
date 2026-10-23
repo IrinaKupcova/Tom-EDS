@@ -10,6 +10,16 @@
   var channel = "chat";
   var panel = null;
   var domain = "chat";
+  var dialogue = [];
+  var complexTopics = [
+    ["Lēmuma, aprēķina vai soda apstrīdēšana un pārsūdzība", /apstrīd|pārsūdz|nepiekrīt|pretrun/],
+    ["Nokavējuma naudas vai soda naudas atcelšana", /(nokavējuma naud|soda naud).{0,40}(atcel|samazin|dzēst)|(atcel|samazin|dzēst).{0,40}(nokavējuma naud|soda naud)/],
+    ["Nodokļu kontroles, audita vai pārbaudes lietas izvērtējums", /nodokļu kontrol|audita|auditu|\baudits\b|tematisk/],
+    ["Nodokļu parāda dzēšana", /parāda dzēš|dzēst parād|paradu dzes/],
+    ["Transfertcenas, pastāvīgā pārstāvniecība vai nodokļu konvencija", /transfertcen|pastāvīgā pārstāv|nodokļu konvenc|dubultā aplik/],
+    ["Muitas lēmuma vai preču klasifikācijas strīds", /muitas lēmum|preču klasifik|taric|izcelsmes strīd|muitas parād/],
+    ["Azartspēļu vai izložu licences atteikums, apturēšana vai anulēšana", /licenc\w*.{0,24}(atteik|anul|aptur)|(atteik|anul|aptur).{0,24}licenc/],
+  ];
 
   var greetings = {
     chat: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?",
@@ -17,34 +27,51 @@
     gambling: "Labdien! Palīdzēšu atrast atbildi par azartspēlēm un izlozēm. Par ko vēlaties jautāt?",
   };
 
+  function remember(text, reply, handoff) {
+    dialogue.push("Klients: " + text);
+    dialogue.push("Toms: " + reply);
+    if (!handoff) return reply;
+    try {
+      sessionStorage.setItem("vid-eds-specialist-draft", JSON.stringify({
+        kategorija: "Vispārīgi jautājumi",
+        tema: "Konsultācija par nodokļu jautājumu",
+        struktura: "Konsultāciju pārvalde",
+        teksts: dialogue.join("\n\n"),
+      }));
+    } catch (error) { /* The file preview can continue without stored history. */ }
+    return reply;
+  }
+
   function answer(text) {
     var t = text.toLowerCase();
-    if (/apstrīd|nepiekrīt|sarežģīt/.test(t)) {
-      return "Šo nevaru pabeigt kā parastu jautājumu. Zvaniet 67120000 vai pasakiet, ka vēlaties nodot speciālistam. Saruna paliek sarakstes vēsturē 30 dienas.";
+    var topic = null;
+    for (var i = 0; i < complexTopics.length; i += 1) {
+      if (complexTopics[i][1].test(t)) topic = complexTopics[i][0];
+    }
+    if (topic) {
+      return remember(text, "Šo tēmu es vērtēju kā sarežģītu: " + topic + ". Zvaniet 67120000 vai atveriet “Rakstīt VID speciālistam” — speciālistam tiks nodota visa sarakste. Saruna paliek sarakstes vēsturē 30 dienas.", true);
     }
     if (/iesniegt|iesnieg|veidlap|izziņ/.test(t)) {
-      return "Šo varat izdarīt pats. EDS kreisajā joslā atveriet Dokumenti → Sagatavot dokumentu → No veidlapas. Kur palasīt: https://www.vid.gov.lv/lv un https://eds.vid.gov.lv/login/ . Ja jautājums ir sarežģīts, zvaniet 67120000 vai nododiet speciālistam.";
-    }
-    if (/speciālist|nosūtīt|rakstīt vid/.test(t)) {
-      return "Ja veidlapas nav un vajag cilvēka atbildi, zvaniet 67120000 vai nododiet saraksti speciālistam. Vispirms jāpieslēdzas EDS — šī ir demonstrācijas poga.";
+      return remember(text, "Šo varat izdarīt pats. EDS kreisajā joslā atveriet Dokumenti → Sagatavot dokumentu → No veidlapas. Kur palasīt: https://www.vid.gov.lv/lv un https://eds.vid.gov.lv/login/ .", false);
     }
     if (/grāmatiņ|gramatin/.test(t)) {
-      return "Šādam pakalpojumam ir veidlapa EDS: “Iesniegums par algas nodokļa grāmatiņas piešķiršanu”. To var atvērt pēc EDS pieslēgšanās, sadaļā Sarakste ar VID.";
+      return remember(text, "Šādam pakalpojumam ir veidlapa EDS: “Iesniegums par algas nodokļa grāmatiņas piešķiršanu”. To var atvērt pēc EDS pieslēgšanās, sadaļā Sarakste ar VID.", false);
     }
     if (/parād|pārmaks|mans |manu |deklarācij/.test(t)) {
-      return "Lai apskatītu jūsu datus, vispirms jāpieslēdzas EDS. Šajā demonstrācijā pēc pieslēgšanās var turpināt jautājumu.";
+      return remember(text, "Lai apskatītu jūsu datus, vispirms jāpieslēdzas EDS. Šajā demonstrācijā pēc pieslēgšanās var turpināt jautājumu.", false);
     }
     if (channel === "customs" || /muit|sūtījum|paka/.test(t)) {
-      return "Par pasta sūtījumiem un muitu atbildi var saņemt uzreiz. Ja jālabo deklarācija vai jāraksta muitas punktam, izvēlieties “Rakstīt speciālistam” — pa vidu būs EDS pieslēgšanās.";
+      return remember(text, "Par pasta sūtījumiem un muitu atbildi var saņemt uzreiz. Kur palasīt: https://www.vid.gov.lv/lv/muitas-kontroles-un-robezkontroles-punkti .", false);
     }
     if (channel === "gambling" || /azart|izlož|izloz|licenc|atļauj/.test(t)) {
-      return "Par azartspēlēm un izlozēm varu paskaidrot kārtību. Licences, atļaujas vai nodokļa jautājumu speciālistam nodod pēc EDS pieslēgšanās.";
+      return remember(text, "Par azartspēlēm un izlozēm aktuālo kārtību skatiet https://www.vid.gov.lv/lv .", false);
     }
-    return "Paldies. Varu palīdzēt ar nodokļu, muitas vai azartspēļu jautājumu. Ja vēstule jānodod speciālistam, vispirms būs EDS pieslēgšanās.";
+    return remember(text, "Uz šo man nav viennozīmīgas atbildes. Zvaniet 67120000 vai atveriet “Rakstīt VID speciālistam” — speciālistam tiks nodota visa sarakste.", true);
   }
 
   function openChat(next) {
     channel = next;
+    dialogue = ["Toms: " + greetings[next]];
     if (!panel) panel = buildChat();
     panel.hidden = false;
     panel.querySelector("[data-title]").textContent = next === "chat" ? "Toms" : "Virtuālais asistents";
@@ -116,6 +143,9 @@
       '<label class="mb-4 block text-sm text-primary">Vēstules teksts<textarea required data-teksts class="input-vid mt-1 h-28 w-full"></textarea></label>' +
       '<div class="flex gap-3"><button type="submit" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Nosūtīt</button><button type="button" data-close class="rounded-md border border-primary px-4 py-2 text-sm text-primary">Aizvērt</button></div>' +
       "</form>";
+    var draft = "";
+    try { draft = JSON.parse(sessionStorage.getItem("vid-eds-specialist-draft") || "null"); } catch (error) { draft = ""; }
+    if (draft && draft.teksts) box.querySelector("[data-teksts]").value = draft.teksts;
     box.querySelectorAll("[data-close]").forEach(function (button) {
       button.addEventListener("click", function () {
         box.remove();

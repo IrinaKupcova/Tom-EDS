@@ -77,11 +77,67 @@ const CERT_GUIDE = "https://www.vid.gov.lv/lv/media/1089/download?attachment=";
 const WAGE = "https://www.vid.gov.lv/lv/algas-nodokla-gramatina";
 const PHONE = "[67120000](tel:+37167120000)";
 
+/** Ilustratīvs prototipa saraksts. Toms pats pēc tā izvērtē tēmu; tas nav iestādes klasifikators, un klienta vārds “sarežģīts” nav kritērijs. */
+const complexTopics: { title: string; pattern: RegExp }[] = [
+  { title: "Lēmuma, aprēķina vai soda apstrīdēšana un pārsūdzība", pattern: /apstrīd|pārsūdz|nepiekrīt|pretrun/i },
+  { title: "Nokavējuma naudas vai soda naudas atcelšana", pattern: /(nokavējuma naud|soda naud).{0,40}(atcel|samazin|dzēst)|(atcel|samazin|dzēst).{0,40}(nokavējuma naud|soda naud)/i },
+  { title: "Nodokļu kontroles, audita vai pārbaudes lietas izvērtējums", pattern: /nodokļu kontrol|audita|auditu|\baudits\b|tematisk/i },
+  { title: "Nodokļu parāda dzēšana", pattern: /parāda dzēš|dzēst parād|paradu dzes/i },
+  { title: "Transfertcenas, pastāvīgā pārstāvniecība vai nodokļu konvencija", pattern: /transfertcen|pastāvīgā pārstāv|nodokļu konvenc|dubultā aplik/i },
+  { title: "Muitas lēmuma vai preču klasifikācijas strīds", pattern: /muitas lēmum|preču klasifik|taric|izcelsmes strīd|muitas parād/i },
+  { title: "Azartspēļu vai izložu licences atteikums, apturēšana vai anulēšana", pattern: /licenc\w*.{0,24}(atteik|anul|aptur)|(atteik|anul|aptur).{0,24}licenc/i },
+];
+export const complexTopicTitles = complexTopics.map((topic) => topic.title);
+
+export function matchComplexTopic(text: string) {
+  return complexTopics.find((topic) => topic.pattern.test(text)) ?? null;
+}
+
+export function conversationTranscript(history: Msg[]) {
+  return history
+    .filter((message) => message.from !== "system" && message.action !== "summary" && message.action !== "auth")
+    .map((message) => `${message.from === "user" ? "Klients" : "Toms"}: ${message.text.trim()}`)
+    .filter((line) => line.length > "Klients:".length)
+    .join("\n\n");
+}
+
+function dialogue(text: string, history: Msg[]) {
+  return history.some((message) => message.text.trim()) ? history : [{ from: "user" as const, text }];
+}
+
+function specialistSummary(source: string, history: Msg[]): Summary {
+  return { ...detectTopic(source), teksts: conversationTranscript(history) || source };
+}
+
+function handoff(history: Msg[], source: string, mode: "topic" | "uncertain" | "continue", topicTitle?: string): Msg[] {
+  const notice = mode === "continue" ? null : structuredFormNotice(source);
+  const offer = `Ja apstiprināt, speciālistam nododu visu šo saraksti. Tā paliek sarakstes vēsturē 30 dienas. Atbilde parasti ir 10 darba dienu laikā, sarežģītos gadījumos līdz 1 mēnesim.${notice ? `\n\n${notice}` : ""}`;
+  const text =
+    mode === "continue"
+      ? "Papildināju speciālistam nododamo saraksti. Pārbaudiet, vai tajā ir visa saruna."
+      : mode === "topic"
+        ? `Šo tēmu es vērtēju kā sarežģītu: ${topicTitle}.\n\nTo nevaru pabeigt ar vienu atbildi. Varat zvanīt konsultatīvajam tālrunim ${PHONE} darba dienās 8:30–16:30 vai skatīt [Klientu apkalpošana](${SERVICE}).\n\n${offer}`
+        : `Uz šo man nav viennozīmīgas atbildes, tāpēc to nevaru pabeigt pats.\n\nVarat zvanīt konsultatīvajam tālrunim ${PHONE} darba dienās 8:30–16:30 vai skatīt [Klientu apkalpošana](${SERVICE}).\n\n${offer}`;
+  return [
+    { from: "toms", text },
+    {
+      from: "toms",
+      text: "Pārbaudiet saraksti un apstipriniet nodošanu speciālistam.",
+      action: "summary",
+      summary: specialistSummary(source, history),
+    },
+  ];
+}
+
+export function uncertainHandoff(history: Msg[]) {
+  const source = history.filter((message) => message.from === "user").map((message) => message.text).join("\n");
+  return handoff(history, source, "uncertain");
+}
+
 function selfServiceGuide(latest: string, context: string): Msg[] | null {
   const submit = /(iesniegt|iesniegum|veidlap|izziņ|izgūt)/i.test(latest);
-  const askSpecialist = /(speciālist|pārsūtīt|rakstīt\s+vid)/i.test(latest);
   const form = matchStructuredForm(context);
-  if (!submit && !askSpecialist && !form) return null;
+  if (!submit && !form) return null;
   const lines = [
     form
       ? `Šo varat izdarīt pats. EDS veidlapa: “${form.subtype}” (dokumenta veids: ${form.type}).`
@@ -95,34 +151,7 @@ function selfServiceGuide(latest: string, context: string): Msg[] | null {
   if (/izziņ|izgūt/i.test(context)) {
     lines.push(`Izziņu sagatavo EDS sadaļā Izziņas → Sagatavot jaunu izziņu. [Kā lietot Izziņas](${CERT_GUIDE}).`);
   }
-  if (askSpecialist) {
-    lines.push(`Ja veidlapas nav un vajag cilvēka atbildi, zvaniet ${PHONE} vai nododiet šo saraksti speciālistam. Saruna paliek sarakstes vēsturē 30 dienas.`);
-    return [
-      { from: "toms", text: lines.join("\n\n"), action: "notice" },
-      { from: "toms", text: "Pārbaudiet kopsavilkumu un apstipriniet, ja vēstule jānodod speciālistam.", action: "summary", summary: detectTopic(context) },
-    ];
-  }
-  lines.push("Ja situācija ir sarežģīta, uzrakstiet to — ieteikšu zvanīt vai nodot speciālistam.");
   return [{ from: "toms", text: lines.join("\n\n"), action: "notice" }];
-}
-
-function complexHandoff(context: string, continuingSummary: boolean): Msg[] {
-  const s = detectTopic(context);
-  const notice = continuingSummary ? null : structuredFormNotice(context);
-  return [
-    {
-      from: "toms",
-      text: continuingSummary
-        ? "Papildināju jautājumu speciālistam. Pārbaudiet kopsavilkumu pirms nosūtīšanas."
-        : `Šo nevaru pabeigt kā parastu jautājumu, jo vajag izvērtēt konkrēto situāciju.\n\nVarat zvanīt konsultatīvajam tālrunim ${PHONE} darba dienās 8:30–16:30 vai skatīt [Klientu apkalpošana](${SERVICE}).\n\nJa vēlaties, nododu šo saraksti VID speciālistam. Tā paliek sarakstes vēsturē 30 dienas. Atbilde parasti ir 10 darba dienu laikā, sarežģītos gadījumos līdz 1 mēnesim.${notice ? `\n\n${notice}` : ""}`,
-    },
-    {
-      from: "toms",
-      text: "Pārbaudiet kopsavilkumu un apstipriniet nodošanu speciālistam.",
-      action: "summary",
-      summary: s,
-    },
-  ];
 }
 
 function userContext(text: string, history: Msg[] = []) {
@@ -133,7 +162,8 @@ function userContext(text: string, history: Msg[] = []) {
 export function publicReply(text: string, history: Msg[] = []): Msg[] {
   const t = text.toLowerCase();
   const context = userContext(text, history);
-  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/.test(t)) return complexHandoff(context, false);
+  const topic = matchComplexTopic(context);
+  if (topic) return handoff(dialogue(text, history), context, "topic", topic.title);
   const guide = selfServiceGuide(text, context);
   if (guide) return guide;
   if (needsIdentification(text)) {
@@ -153,29 +183,32 @@ export function publicReply(text: string, history: Msg[] = []): Msg[] {
     return [
       {
         from: "toms",
-        text: "VID Klientu apkalpošanas centri strādā darba dienās 8:30–16:30. Konsultatīvais tālrunis: 67120000.",
+        text: "VID Klientu apkalpošanas centri strādā darba dienās 8:30–16:30. Konsultatīvais tālrunis: 67120000. [Klientu apkalpošana](https://www.vid.gov.lv/lv/klientu-apkalposana).",
+        action: "notice",
       },
     ];
   if (t.includes("muit"))
     return [
       {
         from: "toms",
-        text: "Pasta sūtījumiem no trešajām valstīm jāmaksā PVN neatkarīgi no vērtības. Ja vēlaties, lai pārbaudu konkrētu sūtījumu, uzrakstiet par to sīkāk.",
+        text: "Pasta sūtījumiem no trešajām valstīm jāmaksā PVN neatkarīgi no vērtības. Punktu saraksts: [Muitas kontroles un robežkontroles punkti](https://www.vid.gov.lv/lv/muitas-kontroles-un-robezkontroles-punkti).",
+        action: "notice",
       },
     ];
   return [
     {
       from: "toms",
-      text: `Paldies. Vispārīgu informāciju varat izlasīt [www.vid.gov.lv](${VID}). Ja vēlaties iesniegt dokumentu, vispirms skatiet EDS sadaļu Dokumenti. Ja jautājums ir sarežģīts, uzrakstiet to — ieteikšu zvanīt vai nodot speciālistam.`,
+      text: `Paldies. Vispārīgu informāciju varat izlasīt [www.vid.gov.lv](${VID}). Ja vēlaties iesniegt dokumentu, vispirms skatiet EDS sadaļu Dokumenti.`,
     },
   ];
 }
 
-export function edsReply(text: string, _turn: number, latest = text, continuingSummary = false): Msg[] {
+export function edsReply(text: string, _turn: number, latest = text, continuingSummary = false, history: Msg[] = []): Msg[] {
   const t = latest.toLowerCase();
-  // Illustrative scenarios only, not institution-approved complexity criteria.
-  const complex = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/.test(t);
-  if (complex || continuingSummary) return complexHandoff(text, continuingSummary);
+  const thread = dialogue(latest, history);
+  if (continuingSummary) return handoff(thread, text, "continue");
+  const topic = matchComplexTopic(`${latest}\n${text}`);
+  if (topic) return handoff(thread, text, "topic", topic.title);
   const guide = selfServiceGuide(latest, text);
   if (guide) return guide;
   const lookup = (answer: string): Msg[] => [
@@ -186,19 +219,21 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
   if (/(pārmaks|atmaks)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu nodokļa pārmaksa ir **86,20 EUR**. Atmaksas statuss: apstrādē. Informācijas avots šajā scenārijā: deklarāciju un nodokļu uzskaites IS.\n\nJa pārmaksa izveidojusies pēc gada ienākumu deklarācijas iesniegšanas, tās atmaksas termiņš parasti ir līdz trim mēnešiem no deklarācijas iesniegšanas dienas. Aktuālo statusu varat redzēt EDS. Šī ir asistenta atbilde, nevis iesniegums speciālistam.");
   if (/(deklarācij|deklaracij)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu gada ienākumu deklarācija ir saņemta. Statuss: apstrādē. Informācijas avots šajā scenārijā: deklarāciju IS.\n\nBieži uzdots jautājums: deklarācijā aprēķinātās pārmaksas atmaksas termiņš parasti ir līdz trim mēnešiem no deklarācijas iesniegšanas dienas. Aktuālo statusu varat redzēt EDS. Vai vēlaties precizēt jautājumu par deklarāciju?");
   if (/(man.*(sūtījum|paka)|sūtījum.*status|paka.*status)/.test(t)) return lookup("**Demonstrācijas dati:** Jūsu pasta sūtījuma muitas deklarācija ir saņemta. Statuss: apstrādē. Informācijas avots šajā scenārijā: muitas IS. Speciālista iesaiste šim statusa pieprasījumam nav nepieciešama.");
-  if (/(samaks|apmaks|maksāt|maksat|nomaks)/.test(t)) return [{ from: "toms", text: "Nodokļu maksājumus varat veikt EDS sadaļā “Maksājumi”, izvēloties attiecīgo saistību. Šajā prototipā maksājums netiek veikts. Vai vēlaties precizēt, par kuru maksājumu jautājat?" }];
-  if (/(eds|darbīb)/.test(t)) return [{ from: "toms", text: "Dokumentus atradīsiet EDS sadaļā “Dokumenti”, bet saraksti — sadaļā “Sarakste ar VID”. Kuru darbību vēlaties veikt?" }];
-  if (/(muit|sūtījum|paka)/.test(t)) return [{ from: "toms", text: "Varu palīdzēt ar pasta sūtījuma deklarēšanu vai muitas deklarācijas statusu. Kas tieši Jūs interesē?" }];
-  return [{ from: "toms", text: "Lūdzu, precizējiet jautājumu. Varu sniegt skaidrojumu vai sameklēt informāciju par Jūsu parādu, pārmaksu vai deklarācijas statusu. Speciālista iesaiste paredzēta tikai sarežģītiem jautājumiem." }];
+  if (/(samaks|apmaks|maksāt|maksat|nomaks)/.test(t)) return [{ from: "toms", action: "notice", text: "Nodokļu maksājumus varat veikt EDS sadaļā “Maksājumi”, izvēloties attiecīgo saistību. Šajā prototipā maksājums netiek veikts." }];
+  if (/(eds|darbīb)/.test(t)) return [{ from: "toms", action: "notice", text: "Dokumentus atradīsiet EDS sadaļā “Dokumenti”, bet saraksti — sadaļā “Sarakste ar VID”." }];
+  if (/(muit|sūtījum|paka)/.test(t)) return [{ from: "toms", action: "notice", text: "Pasta sūtījumu deklarē un statusu skatās EDS. Punktu saraksts: [Muitas kontroles un robežkontroles punkti](https://www.vid.gov.lv/lv/muitas-kontroles-un-robezkontroles-punkti)." }];
+  return [{ from: "toms", text: "Paldies. Vispārīgu informāciju varat izlasīt [www.vid.gov.lv](https://www.vid.gov.lv/lv)." }];
 }
 
 export function gamblingReply(text: string, history: Msg[]): Msg[] {
   const context = "Azartspēļu un izložu jautājums: " + history.filter((m) => m.from === "user").map((m) => m.text).join("\n");
-  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/i.test(text) || history.some((m) => m.action === "summary")) return edsReply(context, 0, text, history.some((m) => m.action === "summary"));
+  if (history.some((m) => m.action === "summary")) return handoff(history, context, "continue");
+  const topic = matchComplexTopic(context);
+  if (topic) return handoff(dialogue(text, history), context, "topic", topic.title);
   const guide = selfServiceGuide(text, context);
   if (guide) return guide;
   if (needsIdentification(text)) return publicReply(text, history);
-  return [{ from: "toms", text: "Par azartspēlēm un izlozēm aktuālo informāciju varat skatīt [VID tīmekļa vietnē](https://www.vid.gov.lv/lv). Šajā prototipā šīs jomas konsultācija tiek demonstrēta. Ja nepieciešams konkrētas situācijas izvērtējums, varat izvēlēties rakstīt VID speciālistam." }];
+  return [{ from: "toms", action: "notice", text: "Par azartspēlēm un izlozēm aktuālo informāciju varat skatīt [VID tīmekļa vietnē](https://www.vid.gov.lv/lv)." }];
 }
 
 /** Scripted replies that only offer generic guidance are answered by the AI model instead. */

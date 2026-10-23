@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { complexTopicTitles, isGenericReply, toAiHistory, uncertainHandoff, type Msg } from "@/lib/toms";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -6,10 +7,24 @@ const INSTRUCTIONS = `Tu esi VID (Valsts ieņēmumu dienests, Latvija) virtuāla
 Meklē aktuālu informāciju internetā, priekšroku dodot vid.gov.lv un likumi.lv, un norādi avotu saiti.
 Ja tēma ir tāda, par kuru klienti bieži jautā vienu un to pašu (piem., gada ienākumu deklarācijas pārmaksas atmaksas termiņš, PVN pasta sūtījumiem no trešajām valstīm, deklarēšanas termiņi), pievieno atsevišķu rindkopu "**Bieži jautā:**" ar šo informāciju.
 Nekad neizdomā konkrētas personas datus, parādus, pārmaksas vai deklarācijas statusu. Ja jautājums ir par personas datiem, saki, ka tie pieejami pēc EDS pieslēgšanās, un neizdomā skaitļus.
-Parastu vēstuli (kā iesniegt, kur izlasīt, kā rīkoties) atbildi pats un iedod saites uz vid.gov.lv vai EDS. Vispirms ved uz pašapkalpošanos: EDS kreisā josla Dokumenti → Sagatavot dokumentu → No veidlapas. Sarežģītā situācijā iesaki zvanīt 67120000 vai piedāvā nodot jautājumu speciālistam. Neiesaki vēstuli speciālistam, ja darbību var izdarīt ar veidlapu vai izziņu.
+Parastu vēstuli (kā iesniegt, kur izlasīt, kā rīkoties) atbildi pats un iedod saites uz vid.gov.lv vai EDS. Vispirms ved uz pašapkalpošanos: EDS kreisā josla Dokumenti → Sagatavot dokumentu → No veidlapas. Neiesaki vēstuli speciālistam, ja darbību var izdarīt ar veidlapu vai izziņu.
+Sarežģītību izvērtē tu pats. Klienta vārds “sarežģīts” nav kritērijs. Sarežģītās tēmas: ${complexTopicTitles.join("; ")}.
+Ja vari dot viennozīmīgu atbildi, atbildi pats. Ja viennozīmīgas atbildes nav, atbildes pirmajā rindā ieraksti tieši NAV_VIENNOZIMIGAS un pēc tam vienu teikumu, kāpēc.
 Ja jautājums ir ārpus pašreizējās jomas, pieklājīgi novirzi atpakaļ uz to.`;
 
 export type AssistantDomain = "tax" | "customs" | "gambling";
+
+export async function completeUnclearReply(scripted: Msg[], history: Msg[], domain: AssistantDomain): Promise<Msg[]> {
+  if (!isGenericReply(scripted)) return scripted;
+  try {
+    const { text } = await askAssistant({ data: { history: toAiHistory(history), domain } });
+    const usable = usableAssistantAnswer(text);
+    if (usable && !/NAV_VIENNOZIMIGAS/i.test(usable)) return [{ from: "toms", text: usable }];
+  } catch {
+    /* The scripted handoff stays available when the model cannot be reached. */
+  }
+  return uncertainHandoff(history);
+}
 
 export function usableAssistantAnswer(text: string) {
   const answer = text.trim();

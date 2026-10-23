@@ -4,10 +4,10 @@ import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, 
 import vidCrestMark from "@/assets/vid-crest-mark.png";
 import fundingImage from "@/assets/eds-funding.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
-import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
+import { askAssistant, completeUnclearReply, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
 import { clearSpecialistDraft, keptByRetention, loadSpecialistDraft } from "@/lib/correspondence";
 import { documentSubtypes, matchStructuredForm, submittedFormNotice } from "@/lib/documents";
-import { gamblingReply, isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
+import { gamblingReply, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
   CommunicationChoices,
@@ -102,21 +102,16 @@ function EdsPage() {
   const requestText = useRef("");
   const topic = useRef<CommunicationCategory>("chat");
   const previousSteps = useRef<Array<{ tab: string | undefined; cat: CommunicationCategory | null; sent: Summary | null; signedIn: boolean; messages: Msg[]; id: string | null; topic: CommunicationCategory; request: string; turn: number }>>([]);
-  const chat = useScriptedChat([], (text, turn, history) => {
+  const chat = useScriptedChat([], (text, _turn, history) => {
     requestText.current = [requestText.current, text].filter(Boolean).join("\n");
     const combined =
       topic.current === "customs"
         ? `Muitas jautājums: ${requestText.current}`
         : requestText.current;
-    const complexPattern = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/i;
-    const continuingSummary = turn > 0 && complexPattern.test(requestText.current) && !complexPattern.test(text);
-    const r = topic.current === "gambling" ? gamblingReply(text, history) : edsReply(combined, turn, text, continuingSummary);
-    if (!isGenericReply(r)) return r;
+    const continuingSummary = history.some((message) => message.action === "summary");
+    const r = topic.current === "gambling" ? gamblingReply(text, history) : edsReply(combined, _turn, text, continuingSummary, history);
     const domain: AssistantDomain = topic.current === "customs" ? "customs" : topic.current === "gambling" ? "gambling" : "tax";
-    return askAssistant({ data: { history: toAiHistory(history), domain } }).then(({ text: answer }): Msg[] => {
-      const usable = usableAssistantAnswer(answer);
-      return usable ? [{ from: "toms", text: usable }] : r;
-    }).catch(() => r);
+    return completeUnclearReply(r, history, domain);
   });
   const rememberStep = () => {
     previousSteps.current.push({ tab, cat, sent, signedIn, messages: chat.messages, id: activeConversation.current, topic: topic.current, request: requestText.current, turn: chat.turn.current });
