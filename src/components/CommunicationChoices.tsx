@@ -12,13 +12,13 @@ const domains: { id: CommunicationDomain; title: string; desc: string; icon: Luc
   { id: "gambling", title: "Azartspēļu un izložu joma", desc: "Azartspēles, izlozes, licences un atļaujas", icon: Dices },
 ];
 
-function ChoiceTile({ title, desc, icon: Icon, note, onClick }: { title: string; desc: string; icon: LucideIcon; note?: string; onClick: () => void }) {
+function ChoiceTile({ title, desc, icon: Icon, note, onClick }: { title: string; desc?: string; icon: LucideIcon; note?: string; onClick: () => void }) {
   return (
     <Button variant="outline" onClick={onClick} className="communication-choice h-auto items-start justify-start whitespace-normal rounded-lg p-4 text-left shadow-none">
       <span className="grid size-9 shrink-0 place-items-center rounded-md bg-chat-accent text-chat-primary"><Icon size={20} /></span>
       <span className="min-w-0">
         <span className="block text-sm font-bold leading-5 text-primary">{title}</span>
-        <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>
+        {desc && <span className="mt-1 block text-xs leading-[18px] text-muted-foreground">{desc}</span>}
         {note && <span className="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">{note}</span>}
       </span>
     </Button>
@@ -67,7 +67,7 @@ export function DomainActions({
     <div>
       <h3 className="mb-4 text-base font-bold text-primary">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
-        <ChoiceTile title="Sarakstīties ar virtuālo asistentu" desc="Atbilde uz vispārīgiem jautājumiem uzreiz" icon={MessageSquareMore} note="Atbilde uzreiz · 24/7" onClick={onAssistant} />
+        <ChoiceTile title="Sarakstīties ar virtuālo asistentu" icon={MessageSquareMore} note="Atbilde uzreiz · 24/7" onClick={onAssistant} />
         <ChoiceTile title="Rakstīt VID speciālistam" desc="Iesniegums, sūdzība, ierosinājums vai cita ziņa" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*" onClick={onSpecialist} />
       </div>
       {domain === "customs" && onPoints && (
