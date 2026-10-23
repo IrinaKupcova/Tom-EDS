@@ -19,8 +19,14 @@
 
   function answer(text) {
     var t = text.toLowerCase();
-    if (/speciālist|iesnieg|nosūtīt|rakstīt vid/.test(t)) {
-      return "Saprotu, ka vēlaties šo jautājumu nodot VID speciālistam. Vispirms jāpieslēdzas EDS — šī ir demonstrācijas poga, nevis īsta pieteikšanās.";
+    if (/apstrīd|nepiekrīt|sarežģīt/.test(t)) {
+      return "Šo nevaru pabeigt kā parastu jautājumu. Zvaniet 67120000 vai pasakiet, ka vēlaties nodot speciālistam. Saruna paliek sarakstes vēsturē 30 dienas.";
+    }
+    if (/iesniegt|iesnieg|veidlap|izziņ/.test(t)) {
+      return "Šo varat izdarīt pats. EDS kreisajā joslā atveriet Dokumenti → Sagatavot dokumentu → No veidlapas. Kur palasīt: https://www.vid.gov.lv/lv un https://eds.vid.gov.lv/login/ . Ja jautājums ir sarežģīts, zvaniet 67120000 vai nododiet speciālistam.";
+    }
+    if (/speciālist|nosūtīt|rakstīt vid/.test(t)) {
+      return "Ja veidlapas nav un vajag cilvēka atbildi, zvaniet 67120000 vai nododiet saraksti speciālistam. Vispirms jāpieslēdzas EDS — šī ir demonstrācijas poga.";
     }
     if (/grāmatiņ|gramatin/.test(t)) {
       return "Šādam pakalpojumam ir veidlapa EDS: “Iesniegums par algas nodokļa grāmatiņas piešķiršanu”. To var atvērt pēc EDS pieslēgšanās, sadaļā Sarakste ar VID.";

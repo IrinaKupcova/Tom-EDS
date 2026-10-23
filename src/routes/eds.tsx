@@ -5,6 +5,7 @@ import vidCrestMark from "@/assets/vid-crest-mark.png";
 import fundingImage from "@/assets/eds-funding.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
+import { clearSpecialistDraft, keptByRetention, loadSpecialistDraft } from "@/lib/correspondence";
 import { documentSubtypes, matchStructuredForm, submittedFormNotice } from "@/lib/documents";
 import { gamblingReply, isGenericReply, toAiHistory, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
@@ -194,8 +195,8 @@ function EdsPage() {
       const stored = sessionStorage.getItem(historyStorageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs" || row.category === "gambling") && Array.isArray(row.messages)).map((row: SavedConversation) => ({ ...row, cancelled: row.cancelled === true })));
-        if (Array.isArray(parsed.outbox)) setOutbox(parsed.outbox.filter((row: SavedLetter) => row && typeof row.tema === "string").map((row: SavedLetter) => ({ ...row, id: typeof row.id === "string" ? row.id : crypto.randomUUID(), cancelled: row.cancelled === true })));
+        if (Array.isArray(parsed.conversations)) setConversations(parsed.conversations.filter((row: SavedConversation) => row && typeof row.id === "string" && (row.category === "chat" || row.category === "customs" || row.category === "gambling") && Array.isArray(row.messages) && keptByRetention(row.date)).map((row: SavedConversation) => ({ ...row, cancelled: row.cancelled === true })));
+        if (Array.isArray(parsed.outbox)) setOutbox(parsed.outbox.filter((row: SavedLetter) => row && typeof row.tema === "string" && keptByRetention(row.date)).map((row: SavedLetter) => ({ ...row, id: typeof row.id === "string" ? row.id : crypto.randomUUID(), cancelled: row.cancelled === true })));
       }
     } catch { /* An unavailable or expired browser session starts empty. */ }
     setHistoryLoaded(true);
@@ -546,7 +547,7 @@ function HistoryDate({ date }: { date?: string | undefined }) {
 function CorrespondenceHistory({ outbox, conversations, onResume, onCancelLetter, onCancelConversation }: { outbox: SavedLetter[]; conversations: SavedConversation[]; onResume: (row: SavedConversation) => void; onCancelLetter: (id: string) => void; onCancelConversation: (id: string) => void }) {
   return <section aria-labelledby="history-title">
     <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
-    <p className="mb-3 text-xs text-muted-foreground">Sarunas un speciālistam pārsūtītās vēstules. Ziņojumu var atcelt ar pogu pie ieraksta.</p>
+    <p className="mb-3 text-xs text-muted-foreground">Šeit paliek arī sarakste ar virtuālo asistentu. Sarunas un vēstules glabājas 30 dienas. Ziņojumu var atcelt ar pogu pie ieraksta.</p>
     <div className="mb-5 flex flex-wrap gap-2 text-xs font-bold text-primary-foreground">
       <span className="rounded bg-primary px-2 py-1">Parastos gadījumos — 10 darba dienas</span>
       <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — līdz vienam mēnesim</span>
@@ -648,13 +649,14 @@ function SentResult({ summary, reply, actions, onHistory }: { summary: Summary; 
 function DocForm({ onSent, onCancel, recipient, documentType }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string; documentType?: string }) {
   const [type, setType] = useState(documentType ?? (recipient ? "Muitas jautājums" : ""));
   const [subtype, setSubtype] = useState("");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() => loadSpecialistDraft()?.teksts ?? "");
   const [error, setError] = useState("");
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         if (!type || !subtype || !text.trim() || error) return;
+        clearSpecialistDraft();
         onSent({
           kategorija: "Dokumenta iesniegšana",
           tema: subtype,

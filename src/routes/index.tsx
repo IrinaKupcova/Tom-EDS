@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Accessibility,
   ArrowLeft,
@@ -23,7 +23,8 @@ import {
   type CommunicationDomain,
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
-import { gamblingReply, publicReply, saveConversation, clearConversation } from "@/lib/toms";
+import { gamblingReply, publicReply, saveConversation, clearConversation, type Summary } from "@/lib/toms";
+import { saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
@@ -99,6 +100,7 @@ function VidPage() {
   >(null);
   const navigate = useNavigate();
   const categoryRef = useRef<CommunicationCategory>("chat");
+  const threadId = useRef(crypto.randomUUID());
   categoryRef.current = chatCategory;
   const chat = useScriptedChat(
     [{ from: "toms", text: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?" }],
@@ -116,10 +118,16 @@ function VidPage() {
       return scripted;
     },
   );
+  useEffect(() => {
+    if (!chat.messages.some((message) => message.from === "user")) return;
+    const category = categoryRef.current === "customs" || categoryRef.current === "gambling" ? categoryRef.current : "chat";
+    upsertChatThread({ id: threadId.current, category, messages: chat.messages });
+  }, [chat.messages]);
   const assistantCategory = (domain: CommunicationDomain): CommunicationCategory =>
     domain === "customs" ? "customs" : domain === "gambling" ? "gambling" : "chat";
   const openDomain = (domain: CommunicationDomain) => setPanel({ kind: "domain", domain, step: "menu" });
   const startAssistant = (domain: CommunicationDomain) => {
+    threadId.current = crypto.randomUUID();
     const category = assistantCategory(domain);
     setChatCategory(category);
     setPanel({ kind: "domain", domain, step: "assistant" });
@@ -139,6 +147,12 @@ function VidPage() {
     if (domain === "gambling") navigate({ to: "/eds", search: { category: "gambling-doc", no: "auth" } });
     else if (domain === "customs") navigate({ to: "/eds", search: { category: "doc", no: "auth", document: "Muitas jautājums" } });
     else navigate({ to: "/eds", search: { category: "doc", no: "auth" } });
+  };
+  const handoff = (summary: Summary) => {
+    const category = categoryRef.current === "customs" || categoryRef.current === "gambling" ? categoryRef.current : "chat";
+    upsertChatThread({ id: threadId.current, category, messages: chat.messages });
+    saveSpecialistDraft(summary);
+    writeSpecialist(category === "gambling" ? "gambling" : category === "customs" ? "customs" : "tax");
   };
   const auth = () => {
     saveConversation(chat.messages);
@@ -178,6 +192,7 @@ function VidPage() {
         busy={chat.busy}
         onSend={chat.send}
         onAuth={auth}
+        onSubmitSummary={handoff}
         suggestions={chatCategory === "customs"
           ? ["Pasta sūtījumi", "Vai jāmaksā muita par paku?"]
           : chatCategory === "gambling"
@@ -190,6 +205,7 @@ function VidPage() {
     <div className="min-h-screen bg-background pt-12">
       <ViewSwitch
         onReset={() => {
+          threadId.current = crypto.randomUUID();
           chat.reset([
             {
               from: "toms",

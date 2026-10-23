@@ -1,4 +1,4 @@
-import { structuredFormNotice, wantsToWriteToSpecialist } from "@/lib/documents";
+import { matchStructuredForm, structuredFormNotice } from "@/lib/documents";
 
 export type Msg = {
   from: "toms" | "user" | "system";
@@ -20,22 +20,7 @@ export const loadConversation = (): Msg[] | null => {
 };
 export const clearConversation = () => sessionStorage.removeItem(STORE);
 
-const PERSONAL = [
-  "mans",
-  "manu",
-  "man ",
-  "manai",
-  "manā",
-  "pārmaks",
-  "parād",
-  "atmaks",
-  "deklarācij",
-  "iesniegum",
-  "soda",
-  "nomaks",
-  "kavēj",
-  "mana",
-];
+const PERSONAL_WORDS = ["mans", "manu", "man ", "manai", "manā", "mana"];
 
 export function detectTopic(text: string): Summary {
   const t = text.toLowerCase();
@@ -77,8 +62,67 @@ export function detectTopic(text: string): Summary {
 }
 
 export function needsIdentification(text: string) {
-  const t = text.toLowerCase() + " ";
-  return PERSONAL.some((k) => t.includes(k));
+  const t = `${text.toLowerCase()} `;
+  const aboutPerson = PERSONAL_WORDS.some((word) => t.includes(word)) || /(pārmaks|parād|atmaks|deklarācij|soda|nomaks|kavēj)/.test(t);
+  if (!aboutPerson) return false;
+  if (/(iesniegt|veidlap|kā iesniegt|kur iesniegt)/.test(t) && !/(mans|manu|manā|mana|status)/.test(t)) return false;
+  return true;
+}
+
+const VID = "https://www.vid.gov.lv/lv";
+const EDS_LOGIN = "https://eds.vid.gov.lv/login/";
+const DOCS_GUIDE = "https://www.vid.gov.lv/lv/media/1103/download?attachment=";
+const SERVICE = "https://www.vid.gov.lv/lv/klientu-apkalposana";
+const CERT_GUIDE = "https://www.vid.gov.lv/lv/media/1089/download?attachment=";
+const WAGE = "https://www.vid.gov.lv/lv/algas-nodokla-gramatina";
+const PHONE = "[67120000](tel:+37167120000)";
+
+function selfServiceGuide(latest: string, context: string): Msg[] | null {
+  const submit = /(iesniegt|iesniegum|veidlap|izziņ|izgūt)/i.test(latest);
+  const askSpecialist = /(speciālist|pārsūtīt|rakstīt\s+vid)/i.test(latest);
+  const form = matchStructuredForm(context);
+  if (!submit && !askSpecialist && !form) return null;
+  const lines = [
+    form
+      ? `Šo varat izdarīt pats. EDS veidlapa: “${form.subtype}” (dokumenta veids: ${form.type}).`
+      : "Šo varat izdarīt pats, bez vēstules speciālistam.",
+    "Vispirms kreisajā joslā atveriet EDS sadaļu Dokumenti → Sagatavot dokumentu → No veidlapas un pārbaudiet, vai tāda veidlapa jau ir.",
+    `Kur palasīt: [www.vid.gov.lv](${VID}), [kā iesniegt dokumentu EDS](${DOCS_GUIDE}), [pieslēgties EDS](${EDS_LOGIN}).`,
+  ];
+  if (form?.subtype.includes("algas nodokļa grāmatiņas") || /grāmatiņ|gramatin/i.test(context)) {
+    lines.push(`Algas nodokļa grāmatiņu saņem sadaļā Algas nodokļa grāmatiņa, nevis ar vēstuli. [Skaidrojums](${WAGE}).`);
+  }
+  if (/izziņ|izgūt/i.test(context)) {
+    lines.push(`Izziņu sagatavo EDS sadaļā Izziņas → Sagatavot jaunu izziņu. [Kā lietot Izziņas](${CERT_GUIDE}).`);
+  }
+  if (askSpecialist) {
+    lines.push(`Ja veidlapas nav un vajag cilvēka atbildi, zvaniet ${PHONE} vai nododiet šo saraksti speciālistam. Saruna paliek sarakstes vēsturē 30 dienas.`);
+    return [
+      { from: "toms", text: lines.join("\n\n"), action: "notice" },
+      { from: "toms", text: "Pārbaudiet kopsavilkumu un apstipriniet, ja vēstule jānodod speciālistam.", action: "summary", summary: detectTopic(context) },
+    ];
+  }
+  lines.push("Ja situācija ir sarežģīta, uzrakstiet to — ieteikšu zvanīt vai nodot speciālistam.");
+  return [{ from: "toms", text: lines.join("\n\n"), action: "notice" }];
+}
+
+function complexHandoff(context: string, continuingSummary: boolean): Msg[] {
+  const s = detectTopic(context);
+  const notice = continuingSummary ? null : structuredFormNotice(context);
+  return [
+    {
+      from: "toms",
+      text: continuingSummary
+        ? "Papildināju jautājumu speciālistam. Pārbaudiet kopsavilkumu pirms nosūtīšanas."
+        : `Šo nevaru pabeigt kā parastu jautājumu, jo vajag izvērtēt konkrēto situāciju.\n\nVarat zvanīt konsultatīvajam tālrunim ${PHONE} darba dienās 8:30–16:30 vai skatīt [Klientu apkalpošana](${SERVICE}).\n\nJa vēlaties, nododu šo saraksti VID speciālistam. Tā paliek sarakstes vēsturē 30 dienas. Atbilde parasti ir 10 darba dienu laikā, sarežģītos gadījumos līdz 1 mēnesim.${notice ? `\n\n${notice}` : ""}`,
+    },
+    {
+      from: "toms",
+      text: "Pārbaudiet kopsavilkumu un apstipriniet nodošanu speciālistam.",
+      action: "summary",
+      summary: s,
+    },
+  ];
 }
 
 function userContext(text: string, history: Msg[] = []) {
@@ -86,19 +130,12 @@ function userContext(text: string, history: Msg[] = []) {
   return (earlier.length ? earlier : [text]).filter(Boolean).join("\n");
 }
 
-function specialistFormReply(latest: string, context: string): Msg[] | null {
-  if (!wantsToWriteToSpecialist(latest)) return null;
-  const notice = structuredFormNotice(context);
-  if (!notice) return null;
-  return [{ from: "toms", text: `Saprotu, ka vēlaties šo jautājumu nodot VID speciālistam. ${notice}`, action: "notice" }];
-}
-
 export function publicReply(text: string, history: Msg[] = []): Msg[] {
   const t = text.toLowerCase();
   const context = userContext(text, history);
-  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/.test(t)) return edsReply(context, 0, text);
-  const formReply = specialistFormReply(text, context);
-  if (formReply) return formReply;
+  if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/.test(t)) return complexHandoff(context, false);
+  const guide = selfServiceGuide(text, context);
+  if (guide) return guide;
   if (needsIdentification(text)) {
     return [
       {
@@ -129,35 +166,18 @@ export function publicReply(text: string, history: Msg[] = []): Msg[] {
   return [
     {
       from: "toms",
-      text: "Paldies par jautājumu! Vispārīgu informāciju varu sniegt uzreiz. Ja jautājums attiecas uz Jums personīgi (deklarācija, pārmaksa, parāds), pastāstiet sīkāk.",
+      text: `Paldies. Vispārīgu informāciju varat izlasīt [www.vid.gov.lv](${VID}). Ja vēlaties iesniegt dokumentu, vispirms skatiet EDS sadaļu Dokumenti. Ja jautājums ir sarežģīts, uzrakstiet to — ieteikšu zvanīt vai nodot speciālistam.`,
     },
   ];
 }
 
 export function edsReply(text: string, _turn: number, latest = text, continuingSummary = false): Msg[] {
-  const s = detectTopic(text);
   const t = latest.toLowerCase();
   // Illustrative scenarios only, not institution-approved complexity criteria.
   const complex = /(apstrīd|pārsūdz|nepiekrīt|nepiekrītu|pretrun|sarežģīt|sarežģit)/.test(t);
-  const formReply = !complex && !continuingSummary ? specialistFormReply(latest, text) : null;
-  if (formReply) return formReply;
-  if (complex || continuingSummary) {
-    const notice = continuingSummary ? null : structuredFormNotice(text);
-    return [
-      {
-        from: "toms",
-        text: continuingSummary
-          ? "Papildināju jautājumu speciālistam. Pārbaudiet kopsavilkumu pirms nosūtīšanas."
-          : `Uz šo jautājumu diemžēl nevaru atbildēt. Vai vēlies, lai pārsūtu Tavu jautājumu VID speciālistam, kurš sniegs atbildi likumu noteiktajos termiņos (parasti līdz 10 darba dienām, sarežģītos jautājumos - līdz vienam mēnesim)? Ir iespēja sazināties ar speciālistiem izmantojot citus kanālus: [Klientu apkalpošana](https://www.vid.gov.lv/lv/klientu-apkalposana).${notice ? `\n\n${notice}` : ""}\n\n* Iesniegumu likuma 5. panta trešā un 3.¹ daļa paredz 10 darbdienas vai sarežģītos gadījumos vienu mēnesi. Šeit pārsūtīšana tiek demonstrēta.`,
-      },
-      {
-        from: "toms",
-        text: "Pārbaudiet tēmu, adresātu un tekstu. Nosūtīšana speciālistam šeit ir tikai demonstrācija.",
-        action: "summary",
-        summary: s,
-      },
-    ];
-  }
+  if (complex || continuingSummary) return complexHandoff(text, continuingSummary);
+  const guide = selfServiceGuide(latest, text);
+  if (guide) return guide;
   const lookup = (answer: string): Msg[] => [
     { from: "system", text: "Datu saņemšana no iestādes IS demonstrēta · izdomāti piemēra dati, nevis Jūsu faktiskā informācija" },
     { from: "toms", text: answer },
@@ -175,8 +195,8 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
 export function gamblingReply(text: string, history: Msg[]): Msg[] {
   const context = "Azartspēļu un izložu jautājums: " + history.filter((m) => m.from === "user").map((m) => m.text).join("\n");
   if (/(apstrīd|pārsūdz|nepiekrīt|pretrun|sarežģīt|sarežģit)/i.test(text) || history.some((m) => m.action === "summary")) return edsReply(context, 0, text, history.some((m) => m.action === "summary"));
-  const formReply = specialistFormReply(text, context);
-  if (formReply) return formReply;
+  const guide = selfServiceGuide(text, context);
+  if (guide) return guide;
   if (needsIdentification(text)) return publicReply(text, history);
   return [{ from: "toms", text: "Par azartspēlēm un izlozēm aktuālo informāciju varat skatīt [VID tīmekļa vietnē](https://www.vid.gov.lv/lv). Šajā prototipā šīs jomas konsultācija tiek demonstrēta. Ja nepieciešams konkrētas situācijas izvērtējums, varat izvēlēties rakstīt VID speciālistam." }];
 }
