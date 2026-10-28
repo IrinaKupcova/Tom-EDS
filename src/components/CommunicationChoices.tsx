@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Box, Building2, Dices, FilePlus2, History, MessageSquareMore, RotateCcw, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { openStartGate } from "@/components/StartGate";
 
 export type CommunicationCategory = "chat" | "doc" | "customs" | "history" | "gambling" | "gambling-doc" | "tax-menu" | "customs-menu" | "gambling-menu";
 export type CommunicationDomain = "tax" | "customs" | "gambling";
@@ -94,20 +93,6 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
         size="sm"
         asChild
         className={
-          path === "/eds"
-            ? "bg-card font-bold text-primary hover:bg-card"
-            : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
-        }
-      >
-        <Link to="/eds" search={{}}>
-          EDS
-        </Link>
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        asChild
-        className={
           path === "/"
             ? "bg-card font-bold text-primary hover:bg-card"
             : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
@@ -118,11 +103,16 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
       <Button
         variant="ghost"
         size="sm"
-        title="Atgriezties uz sākuma skatu"
-        onClick={openStartGate}
-        className="text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
+        asChild
+        className={
+          path === "/eds"
+            ? "bg-card font-bold text-primary hover:bg-card"
+            : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
+        }
       >
-        Atgriežos iepriekšējā solī
+        <Link to="/eds" search={{}}>
+          EDS
+        </Link>
       </Button>
       <Button
         variant="ghost"

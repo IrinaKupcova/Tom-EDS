@@ -7,8 +7,13 @@ import vidCrestMark from "@/assets/vid-crest-mark.png";
 const START_KEY = "vid-start-view-v1";
 const SHOW_EVENT = "vid-start-gate";
 
-/** Atver sākuma skatu, lai atgrieztos pie EDS vai VID tīmekļa vietnes izvēles. */
+/** Atver sākuma skatu, lai atkārtoti izvēlētos EDS vai VID tīmekļa vietni. */
 export function openStartGate() {
+  try {
+    sessionStorage.removeItem(START_KEY);
+  } catch {
+    /* sessionStorage var būt nepieejams */
+  }
   window.dispatchEvent(new Event(SHOW_EVENT));
 }
 
@@ -105,7 +110,7 @@ export function StartGate() {
           </Button>
         </div>
         <p className="mt-5 text-center text-[10px] text-muted-foreground">
-          Atpakaļ uz šo skatu var atgriezties ar “Atgriežos iepriekšējā solī”.
+          Skatu varēs pārslēgt arī lapas augšpusē.
         </p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, Bell, CheckCircle2, ChevronDown, ChevronRight, LockKeyhole, Menu, Phone, Search, UserRound, UserRoundPen, X } from "lucide-react";
 import vidCrestMark from "@/assets/vid-crest-mark.png";
@@ -16,7 +16,6 @@ import {
   type CommunicationCategory,
   type CommunicationDomain,
 } from "@/components/CommunicationChoices";
-import { openStartGate } from "@/components/StartGate";
 import { Button } from "@/components/ui/button";
 import {
   clearConversation,
@@ -82,6 +81,7 @@ type SavedConversation = { id: string; category: "chat" | "customs" | "gambling"
 type SavedLetter = Summary & { id: string; date?: string | undefined; cancelled?: boolean | undefined; cancelReason?: string | undefined; cancelNote?: string | undefined; origin?: "client" | "assistant" | undefined; demo?: boolean | undefined };
 const historyStorageKey = "vid-eds-correspondence-v1";
 function EdsPage() {
+  const router = useRouter();
   const { no, category, point, document, handoff } = Route.useSearch();
   const [tab, setTab] = useState<MailTab>("compose");
   const [historyFilter, setHistoryFilter] = useState<"all" | "chats" | "sent" | "inbox" | "drafts" | "unread">("all");
@@ -126,7 +126,8 @@ function EdsPage() {
   const goBack = () => {
     const step = previousSteps.current.pop();
     if (!step) {
-      openStartGate();
+      if (window.history.length > 1) router.history.back();
+      else router.navigate({ to: "/" });
       return;
     }
     if (step.tab) setTab(step.tab);
@@ -238,8 +239,8 @@ function EdsPage() {
     requestText.current = "";
   };
   const [assistantReply, setAssistantReply] = useState<string | null>(null);
-  const submit = (s: Summary) => {
-    setOutbox((rows) => [...rows, { ...s, id: crypto.randomUUID(), date: new Date().toISOString() }]);
+  const submit = (s: Summary, origin: "client" | "assistant" = "client") => {
+    setOutbox((rows) => [...rows, { ...s, id: crypto.randomUUID(), date: new Date().toISOString(), origin }]);
     setAssistantReply(null);
     const domain: AssistantDomain = /muit/i.test(`${s.kategorija} ${s.tema} ${s.teksts}`) ? "customs" : /azart|izlož|izloz/i.test(`${s.kategorija} ${s.tema} ${s.teksts}`) ? "gambling" : "tax";
     askAssistant({ data: { history: [{ role: "user", content: s.teksts }], domain } })
@@ -368,7 +369,7 @@ function EdsPage() {
         </form>
         {searchOpen && <div className="border-b border-border px-[15px] py-2"><input aria-label="Meklēt EDS" autoFocus placeholder="Meklēt..." value={mailSearch} onChange={(e) => setMailSearch(e.target.value)} className="input-vid h-[26px] w-full max-w-[300px] rounded-none text-[10px]" /></div>}
         <main className="w-full max-w-[719px] flex-1 px-[15px] pb-8 pt-7">
-          <Button variant="link" size="sm" onClick={goBack} className="mb-4 h-auto px-0 text-xs text-primary"><ArrowLeft size={14} /> Atgriežos iepriekšējā solī</Button>
+          <Button variant="link" size="sm" onClick={goBack} className="mb-4 h-auto px-0 text-xs text-primary"><ArrowLeft size={14} /> Atpakaļ</Button>
           {!opened && notice && (
             <SentResult
               summary={notice}
@@ -397,12 +398,6 @@ function EdsPage() {
                 <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
                   <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
                   <p className="mb-5 text-sm leading-6">{no === "toms" ? "Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu." : point ? `Pēc pieslēgšanās varēsiet rakstīt: ${point}.` : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam."}</p>
-                  {no !== "toms" && (
-                    <p role="note" className="mb-5 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">
-                      <span className="font-bold">Paziņojums. </span>
-                      {specialistDocumentsNotice}
-                    </p>
-                  )}
                   <Button className="w-full" onClick={continueConversation}>Pieslēgties EDS</Button>
                   <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
                 </section>
@@ -436,10 +431,13 @@ function EdsPage() {
                   )}
                 </div>
               ) : cat === "history" ? (
-                <div className="mx-auto max-w-3xl px-4 py-6"><CorrespondenceHistory key={historyFilter} initialFilter={historyFilter} outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} /></div>
+                <div className="mx-auto max-w-3xl px-4 py-6">
+                  <Button variant="outline" onClick={goBack} className="mb-4"><ArrowLeft size={16} /> Atpakaļ</Button>
+                  <CorrespondenceHistory key={historyFilter} initialFilter={historyFilter} outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} />
+                </div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
-                  <DocForm initialText={handoffLetter} onSent={(summary) => { setHandoffLetter(""); submit(summary); }} onCancel={() => { blankSpecialistLetter(); goBack(); }} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
+                  <DocForm initialText={handoffLetter} onSent={(summary) => { const origin = handoffLetter ? "assistant" : "client"; setHandoffLetter(""); submit(summary, origin); }} onCancel={() => { blankSpecialistLetter(); goBack(); }} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
@@ -463,7 +461,7 @@ function EdsPage() {
                       messages={chat.messages}
                       onSend={chat.send}
                       busy={chat.busy}
-                      onSubmitSummary={submit}
+                      onSubmitSummary={(summary) => submit(summary, "assistant")}
                       suggestions={
                         cat === "customs"
                           ? ["Pasta sūtījumi", "Muitas jautājumi", "Rakstu uz muitas punktu"]
@@ -602,8 +600,9 @@ function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", o
         <HistoryDate date={item.date} />
         {item.demo && <p className="mb-1 text-xs font-bold text-primary">Demonstrācijas paraugs</p>}
         <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
-        <p className="mt-1 text-xs text-muted-foreground">{item.origin === "client" ? "Jūs nosūtījāt" : item.origin === "assistant" ? "Asistents pārsūtīja" : "Speciālistam pārsūtīta vēstule"} · {item.struktura}{item.cancelled ? " · Ziņojums atcelts" : ""}</p>
-        {item.origin === "assistant" ? <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Čata vēsture, ko pārsūtīja asistents</summary><p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p></details> : <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>}
+        {item.origin === "assistant" && <p className="mt-1 text-sm font-bold text-primary">Speciālistam vēstuli nosūtīja čatbots</p>}
+        {(item.struktura || item.cancelled) && <p className="mt-1 text-xs text-muted-foreground">{[item.struktura, item.cancelled ? "Ziņojums atcelts" : ""].filter(Boolean).join(" · ")}</p>}
+        {item.origin === "assistant" ? <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Čata vēsture, ko pārsūtīja čatbots</summary><p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p></details> : <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>}
         <CancelStatus row={item} onCancel={(details) => onCancelLetter(item.id, details)} />
       </article>)}
       {!visibleChats.length && !visibleSent.length && <p className="py-4 text-sm text-muted-foreground">{filter === "unread" ? "Ziņas, kuras vēl neesat atvēruši. Šeit vēl nav nelasītu ziņu." : filter === "inbox" ? "Ziņas, ko VID jums ir nosūtījis. Šeit vēl nav saņemtu ziņu." : filter === "drafts" ? "Ziņas, ko sagatavojāt, bet vēl nenosūtījāt. Šeit vēl nav sagatavotu ziņu." : filter === "sent" ? "Šeit vēl nav nosūtītu ziņu." : filter === "chats" ? "Šeit vēl nav sarunu ar asistentu." : "Šeit vēl nav sarunu vai nosūtītu ziņu."}</p>}

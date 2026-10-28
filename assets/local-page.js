@@ -6,10 +6,8 @@
     });
     if (location.hash === "#pieslegties") showAuth();
     if (edsFile()) clarifyMailbox();
-    putEdsFirst();
-    bindHomeButton();
-    bindReturnButton();
-    showStartChoice(false);
+    hideHomeButton();
+    showStartChoice();
   });
 
   var channel = "chat";
@@ -212,66 +210,30 @@
     return el;
   }
 
-  function putEdsFirst() {
-    var bar = document.querySelector(".view-switch");
-    if (!bar) return;
-    var links = Array.prototype.slice.call(bar.querySelectorAll("a"));
-    var eds = null;
-    var vid = null;
-    links.forEach(function (link) {
-      var text = link.textContent.replace(/\s+/g, " ").trim();
-      if (text === "EDS") eds = link;
-      if (text === "vid.gov.lv") vid = link;
-    });
-    if (eds && vid) vid.parentNode.insertBefore(eds, vid);
-  }
-
   function rememberView(view) {
-    try { sessionStorage.setItem("vid-start-view-v1", view); } catch (error) { /* Izvēle paliek redzama šajā atvēršanā. */ }
+    try { sessionStorage.setItem("vid-start-view-v1", view); } catch (error) { /* Sākuma skats paliek šai atvēršanai. */ }
   }
 
-  function labelReturn(button) {
-    Array.prototype.forEach.call(button.childNodes, function (node) {
-      if (node.nodeType === 3 && /Sākums|Atpakaļ/.test(node.textContent)) node.textContent = " Atgriežos iepriekšējā solī";
-    });
-  }
+  var historyReturn = null;
 
-  function bindHomeButton() {
+  function hideHomeButton() {
     var bar = document.querySelector(".view-switch");
     if (!bar) return;
     Array.prototype.forEach.call(bar.querySelectorAll("button"), function (button) {
-      if (button.textContent.replace(/\s+/g, " ").trim() !== "Sākums") return;
-      labelReturn(button);
-      button.addEventListener("click", function (event) {
-        event.preventDefault();
-        showStartChoice(true);
-      });
+      if (button.textContent.replace(/\s+/g, " ").trim() === "Sākums") button.remove();
     });
   }
 
-  function bindReturnButton() {
-    Array.prototype.forEach.call(document.querySelectorAll("button"), function (button) {
-      if (button.closest(".view-switch")) return;
-      if (button.textContent.replace(/\s+/g, " ").trim() !== "Atpakaļ") return;
-      labelReturn(button);
-      button.addEventListener("click", function (event) {
-        event.preventDefault();
-        showStartChoice(true);
-      });
-    });
-  }
-
-  function showStartChoice(force) {
-    if (!force && location.hash === "#skats") {
+  function showStartChoice() {
+    if (location.hash === "#skats") {
       rememberView(edsFile() ? "eds" : "vid");
       history.replaceState(null, "", location.pathname + location.search);
       return;
     }
-    if (!force) {
-      try { if (sessionStorage.getItem("vid-start-view-v1")) return; } catch (error) { /* Rāda sākuma skatu. */ }
-    }
-    var existing = document.getElementById("local-start");
-    if (existing) existing.remove();
+    try {
+      if (sessionStorage.getItem("vid-start-view-v1")) return;
+    } catch (error) { /* Rāda sākuma skatu. */ }
+    if (document.getElementById("local-start")) return;
     var onEds = edsFile();
     var gate = document.createElement("section");
     gate.id = "local-start";
@@ -279,7 +241,7 @@
     gate.setAttribute("aria-modal", "true");
     gate.setAttribute("aria-labelledby", "local-start-title");
     gate.style.cssText = "position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:auto;background:var(--secondary);padding:32px 20px;";
-    gate.innerHTML = '<div style="width:100%;max-width:560px;border:1px solid var(--border);border-radius:8px;background:var(--card);padding:32px;"><h1 id="local-start-title" style="text-align:center;font-size:20px;font-weight:700;color:var(--primary);">Sākuma skats</h1><p style="margin-top:8px;text-align:center;font-size:14px;">Izvēlies, kuru VID vidi vēlies apskatīt šajā prototipā.</p><div style="display:grid;gap:12px;margin-top:24px;"><button type="button" data-eds style="padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--card);text-align:left;font-weight:700;color:var(--primary);">EDS<span style="display:block;margin-top:4px;font-size:12px;font-weight:400;">Elektroniskā deklarēšanas sistēma — ar pieslēgšanos</span></button><button type="button" data-vid style="padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--card);text-align:left;font-weight:700;color:var(--primary);">VID tīmekļa vietne<span style="display:block;margin-top:4px;font-size:12px;font-weight:400;">www.vid.gov.lv — saziņa bez pieslēgšanās</span></button></div><p style="margin-top:20px;text-align:center;font-size:10px;">Atpakaļ uz šo skatu var atgriezties ar “Atgriežos iepriekšējā solī”.</p></div>';
+    gate.innerHTML = '<div style="width:100%;max-width:560px;border:1px solid var(--border);border-radius:8px;background:var(--card);padding:32px;"><h1 id="local-start-title" style="text-align:center;font-size:20px;font-weight:700;color:var(--primary);">Sākuma skats</h1><p style="margin-top:8px;text-align:center;font-size:14px;">Izvēlies, kuru VID vidi vēlies apskatīt šajā prototipā.</p><div style="display:grid;gap:12px;margin-top:24px;"><button type="button" data-eds style="padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--card);text-align:left;font-weight:700;color:var(--primary);">EDS<span style="display:block;margin-top:4px;font-size:12px;font-weight:400;">Elektroniskā deklarēšanas sistēma — ar pieslēgšanos</span></button><button type="button" data-vid style="padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--card);text-align:left;font-weight:700;color:var(--primary);">VID tīmekļa vietne<span style="display:block;margin-top:4px;font-size:12px;font-weight:400;">www.vid.gov.lv — saziņa bez pieslēgšanās</span></button></div></div>';
     document.body.appendChild(gate);
     gate.querySelector("[data-eds]").addEventListener("click", function () {
       rememberView("eds");
@@ -388,6 +350,7 @@
 
   function showLocalHistory(filter) {
     var main = document.querySelector("main");
+    if (!historyReturn) historyReturn = { scroll: window.scrollY, mainHidden: main ? main.hidden : false };
     if (main) main.hidden = true;
     var box = document.getElementById("local-history");
     if (!box) {
@@ -400,11 +363,14 @@
     box.textContent = "";
     var back = document.createElement("button");
     back.type = "button";
-    back.className = "mb-4 text-sm font-bold text-primary";
     back.textContent = "Atpakaļ";
+    back.style.cssText = "margin-bottom:16px;border:1px solid var(--primary);border-radius:6px;background:var(--card);padding:8px 12px;font-size:14px;font-weight:700;color:var(--primary);";
     back.addEventListener("click", function () {
       box.hidden = true;
-      if (main) main.hidden = false;
+      if (main) main.hidden = historyReturn ? historyReturn.mainHidden : false;
+      var top = historyReturn ? historyReturn.scroll : 0;
+      historyReturn = null;
+      window.scrollTo(0, top);
     });
     var title = document.createElement("h2");
     title.textContent = "Sarakstes vēsture";
@@ -478,11 +444,21 @@
         badge.textContent = "Demonstrācijas paraugs";
         article.appendChild(badge);
       }
-      var note = document.createElement("p");
-      note.className = "mt-1 text-xs";
-      note.textContent = (item && item.origin === "client" ? "Jūs nosūtījāt" : "Asistents pārsūtīja") + (item && item.struktura ? " · " + item.struktura : "");
       article.appendChild(heading);
-      article.appendChild(note);
+      if (item && item.origin === "assistant") {
+        var note = document.createElement("p");
+        note.className = "mt-1 text-sm";
+        note.style.fontWeight = "700";
+        note.style.color = "var(--primary)";
+        note.textContent = "Speciālistam vēstuli nosūtīja čatbots";
+        article.appendChild(note);
+      }
+      if (item && (item.struktura || item.cancelled)) {
+        var meta = document.createElement("p");
+        meta.className = "mt-1 text-xs";
+        meta.textContent = [item.struktura, item.cancelled ? "Ziņojums atcelts" : ""].filter(Boolean).join(" · ");
+        article.appendChild(meta);
+      }
       if (item && item.teksts) {
         var body = document.createElement("p");
         body.className = "mt-2 text-sm";
@@ -493,6 +469,17 @@
       appendCancelControl(article, item, "letter", filter);
       box.appendChild(article);
     });
+  }
+
+  function saveSentLetter(letter) {
+    var stored = { conversations: [], outbox: [] };
+    try { stored = JSON.parse(sessionStorage.getItem("vid-eds-correspondence-v1") || "{}"); } catch (error) { stored = { conversations: [], outbox: [] }; }
+    if (!stored || typeof stored !== "object") stored = { conversations: [], outbox: [] };
+    var outbox = Array.isArray(stored.outbox) ? stored.outbox : [];
+    outbox.unshift(letter);
+    stored.outbox = outbox;
+    if (!Array.isArray(stored.conversations)) stored.conversations = [];
+    try { sessionStorage.setItem("vid-eds-correspondence-v1", JSON.stringify(stored)); } catch (error) { /* Vēstule paliek redzama šajā lapā. */ }
   }
 
   function seedDemoHistory() {
@@ -562,8 +549,7 @@
     box.innerHTML =
       '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Pieslēgties EDS</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
       '<div class="mx-auto mt-8 w-full max-w-[430px] border border-border bg-card p-6">' +
-      '<p class="mb-4 text-sm leading-6">' + (pendingPoint ? "Pēc pieslēgšanās varēsiet rakstīt: " + pendingPoint + "." : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam.") + "</p>" +
-      '<p role="note" class="mb-5 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6"><strong>Paziņojums.</strong> Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.</p>' +
+      '<p class="mb-5 text-sm leading-6">' + (pendingPoint ? "Pēc pieslēgšanās varēsiet rakstīt: " + pendingPoint + "." : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam.") + "</p>" +
       '<button type="button" data-login class="w-full rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Pieslēgties EDS</button>' +
       '<p class="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p></div>';
     box.querySelector("[data-close]").addEventListener("click", function () {
@@ -612,7 +598,9 @@
       themeSelect.value = "Muitas jautājums";
       themeSelect.dispatchEvent(new Event("change"));
     }
+    var letterOrigin = "client";
     if (draft && draft.teksts) {
+      letterOrigin = "assistant";
       box.querySelector("[data-teksts]").value = draft.teksts;
       sessionStorage.removeItem("vid-eds-specialist-draft");
     }
@@ -624,6 +612,16 @@
     box.querySelector("form").addEventListener("submit", function (event) {
       event.preventDefault();
       var tema = box.querySelector("[data-tema]").value + " — " + box.querySelector("[data-apakstema]").value;
+      var teksts = box.querySelector("[data-teksts]").value;
+      saveSentLetter({
+        id: "letter-" + Date.now(),
+        kategorija: "Dokumenta iesniegšana",
+        tema: tema,
+        struktura: recipient || "VID speciālists",
+        teksts: teksts,
+        date: new Date().toISOString(),
+        origin: letterOrigin,
+      });
       box.remove();
       var note = document.createElement("section");
       note.className = "mx-auto mb-4 max-w-3xl border border-border bg-card p-4";
