@@ -1,5 +1,19 @@
 /** Viena dokumentu apakšveidu kataloga vieta. Strukturētās veidlapas ir ilustratīvas, nevis ražošanas klasifikators. */
 export const documentSubtypes: Record<string, string[]> = {
+  "Jautājums": [
+    "Jautājums par deklarācijas iesniegšanu",
+    "Jautājums par nodokļa aprēķinu",
+    "Jautājums par maksājumu",
+    "Jautājums par EDS lietošanu",
+    "Jautājums par termiņu",
+    "Cits jautājums",
+  ],
+  "Pieteikums": [
+    "Pieteikums konsultācijai",
+    "Pieteikums klātienes apmeklējumam",
+    "Pieteikums pakalpojuma saņemšanai",
+    "Cits pieteikums",
+  ],
   "Iesniegums": ["Iesniegums par nodokļu atmaksu", "Iesniegums par nodokļu parāda samaksas termiņa pagarinājumu", "Iesniegums par nodokļu maksājumu sadalīšanu termiņos", "Iesniegums par nodokļu aprēķina pārskatīšanu", "Iesniegums par algas nodokļa grāmatiņas piešķiršanu", "Cits iesniegums"],
   "Sūdzība": [
     "Sūdzība par VID pieņemtu lēmumu",
@@ -48,6 +62,10 @@ export const documentSubtypes: Record<string, string[]> = {
 const WHERE =
   "To var atrast EDS sadaļā “Dokumenti” → “Sagatavot dokumentu” → “No veidlapas”, meklējot veidlapu pēc nosaukuma.";
 
+/** Norāde pie sarakstes ar speciālistu: strukturētās veidlapas ir kreisajā joslā. */
+export const specialistDocumentsNotice =
+  "Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.";
+
 type StructuredForm = { type: string; subtype: string; test: (text: string) => boolean };
 
 const has = (text: string, pattern: RegExp) => pattern.test(text);
@@ -83,6 +101,20 @@ const structuredForms: StructuredForm[] = [
   { type: "Pilnvara", subtype: "Pilnvaras atsaukums", test: (t) => has(t, /pilnvar/) && has(t, /atsauk/) },
   { type: "Pilnvara", subtype: "Pilnvara pārstāvībai VID", test: (t) => has(t, /pilnvar/) },
 ];
+
+/** Vēstules formai. Šeit nav iesnieguma, pilnvaras un pieteikuma, ne arī apakštēmu, kuras EDS jau piedāvā kā strukturētu dokumentu. */
+export function letterThemeOptions(): Record<string, string[]> {
+  const structured = new Set(structuredForms.map((item) => item.subtype));
+  const omittedTypes = new Set(["Iesniegums", "Pilnvara", "Pieteikums"]);
+  const keptTypes = new Set(["Jautājums", "Paskaidrojums", "Sūdzība", "Ierosinājums"]);
+  return Object.fromEntries(
+    Object.entries(documentSubtypes).flatMap(([type, subtypes]) => {
+      if (omittedTypes.has(type)) return [];
+      const next = keptTypes.has(type) && type !== "Paskaidrojums" ? subtypes : subtypes.filter((subtype) => !structured.has(subtype));
+      return next.length ? [[type, next]] : [];
+    }),
+  );
+}
 
 export function wantsToWriteToSpecialist(latest: string) {
   return /(speciālist|iesniegt|iesniegum|veidlap|nosūtīt|pārsūtīt|rakstīt\s+vid)/i.test(latest);

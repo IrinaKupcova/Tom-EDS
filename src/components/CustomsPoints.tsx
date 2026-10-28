@@ -13,7 +13,8 @@ export function CustomsPoints({ requireAuth = false }: { requireAuth?: boolean }
   return (
     <section aria-label="VID muitas punkti">
       {requireAuth && <p className="mb-3 text-xs text-muted-foreground">Rakstot speciālistam vai muitas punktam, vispirms jāpieslēdzas EDS.</p>}
-      <h4 className="mb-4 flex items-center gap-2 text-base font-bold text-primary"><Building2 size={19} /> Muitas kontroles punkti</h4>
+      <h4 className="mb-1 flex items-center gap-2 text-base font-bold text-primary"><Building2 size={19} /> Rakstīt uz muitas kontroles punktu</h4>
+      <p className="mb-4 text-sm leading-6">Izvēlieties punktu no saraksta un rakstiet tam uzreiz.</p>
       <div className="grid gap-5 sm:grid-cols-2">
         {customsGroups.map(({ region, points }) => (
           <div key={region}>

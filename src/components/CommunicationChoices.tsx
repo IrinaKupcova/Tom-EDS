@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Box, Building2, Dices, FilePlus2, History, Home, MessageSquareMore, RotateCcw, type LucideIcon } from "lucide-react";
+import { Box, Building2, Dices, FilePlus2, History, MessageSquareMore, RotateCcw, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { openStartGate } from "@/components/StartGate";
 
@@ -42,7 +42,9 @@ export function CommunicationChoices({
         ))}
       </div>
       {!publicSite && onHistory && (
-        <Button variant="link" onClick={onHistory} className="mt-3 h-auto px-0 text-primary"><History size={16} /> Sarakstes vēsture</Button>
+        <div className="mt-3">
+          <ChoiceTile title="Sarakstes vēsture" icon={History} desc="Šeit ir nelasītās, saņemtās, nosūtītās un sagatavotās ziņas, kā arī sarunas ar asistentu." onClick={onHistory} />
+        </div>
       )}
       {!publicSite && <p className="mt-2 text-[10px] text-muted-foreground">
         Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti.
@@ -71,7 +73,7 @@ export function DomainActions({
         <ChoiceTile title="Rakstīt VID speciālistam" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*" onClick={onSpecialist} />
       </div>
       {domain === "customs" && onPoints && (
-        <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-primary"><Building2 size={18} /> Muitas kontroles punkti</Button>
+        <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-primary"><Building2 size={18} /> Rakstīt uz muitas kontroles punktu</Button>
       )}
       <ResponseTimeNote />
     </div>
@@ -92,18 +94,6 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
         size="sm"
         asChild
         className={
-          path === "/"
-            ? "bg-card font-bold text-primary hover:bg-card"
-            : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
-        }
-      >
-        <Link to="/">vid.gov.lv</Link>
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        asChild
-        className={
           path === "/eds"
             ? "bg-card font-bold text-primary hover:bg-card"
             : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
@@ -116,11 +106,23 @@ export function ViewSwitch({ onReset }: { onReset: () => void }) {
       <Button
         variant="ghost"
         size="sm"
-        title="Sākuma skats — izvēlēties EDS vai VID tīmekļa vietni"
+        asChild
+        className={
+          path === "/"
+            ? "bg-card font-bold text-primary hover:bg-card"
+            : "text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
+        }
+      >
+        <Link to="/">vid.gov.lv</Link>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        title="Atgriezties uz sākuma skatu"
         onClick={openStartGate}
         className="text-switch-foreground hover:bg-white/10 hover:text-switch-foreground"
       >
-        <Home size={14} /> Sākums
+        Atgriežos iepriekšējā solī
       </Button>
       <Button
         variant="ghost"

@@ -24,7 +24,7 @@ import {
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation, type Summary } from "@/lib/toms";
-import { clearSpecialistDraft, saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
+import { clearChatHistory, clearSpecialistDraft, saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { completeUnclearReply, type AssistantDomain } from "@/lib/ai.functions";
@@ -97,6 +97,7 @@ function VidPage() {
     | { kind: "domain"; domain: CommunicationDomain; step: "menu" | "assistant" | "points" }
     | { kind: "service" }
   >(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const navigate = useNavigate();
   const categoryRef = useRef<CommunicationCategory>("chat");
   const threadId = useRef(crypto.randomUUID());
@@ -152,6 +153,23 @@ function VidPage() {
     navigate({ to: "/eds", search: { no: "toms" } });
   };
   const closePanel = () => setPanel(null);
+  const deleteCorrespondenceHistory = () => {
+    clearChatHistory();
+    threadId.current = crypto.randomUUID();
+    const domain = panel?.kind === "domain" ? panel.domain : "tax";
+    chat.reset([
+      {
+        from: "toms",
+        text:
+          domain === "customs"
+            ? "Labdien! Palīdzēšu atrast atbildi uz muitas jautājumu. Par ko vēlaties jautāt?"
+            : domain === "gambling"
+              ? "Labdien! Palīdzēšu atrast atbildi par azartspēlēm un izlozēm. Par ko vēlaties jautāt?"
+              : "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?",
+      },
+    ]);
+    setConfirmDelete(false);
+  };
   const backPanel = () => {
     if (panel?.kind === "domain" && panel.step !== "menu") setPanel({ kind: "domain", domain: panel.domain, step: "menu" });
     else setPanel(null);
@@ -164,6 +182,8 @@ function VidPage() {
   const panelTitle =
     panel?.kind === "service"
       ? "Klientu apkalpošana"
+      : panel?.kind === "domain" && panel.step === "points"
+        ? "Rakstīt uz muitas kontroles punktu"
       : panel?.kind === "domain" && panel.domain === "customs"
         ? "Muitas joma"
         : panel?.kind === "domain" && panel.domain === "gambling"
@@ -173,11 +193,21 @@ function VidPage() {
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-card" aria-label="Toms — VID virtuālais asistents">
       <div className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
         {chatCategory !== "customs" && chatCategory !== "gambling" && <TomsAvatar size={36} />}
-        <div>
+        <div className="min-w-0 flex-1">
           <h3 className="text-sm font-bold">{chatCategory === "customs" || chatCategory === "gambling" ? "Virtuālais asistents" : "Toms"}</h3>
           <p className="text-xs">VID virtuālais asistents{chatCategory === "customs" ? " · muitas jautājumi" : chatCategory === "gambling" ? " · azartspēles un izlozes" : ""}</p>
         </div>
+        <Button variant="outline" size="sm" className="h-auto shrink-0 whitespace-normal border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setConfirmDelete(true)}>Izdzēst sarakstes vēsturi</Button>
       </div>
+      {confirmDelete && (
+        <div className="border-b border-border bg-secondary px-4 py-3 text-sm text-foreground">
+          <p>Vai dzēst sarakstes vēsturi? Čata sarunas tiks izdzēstas. Speciālistam jau nosūtītās vēstules paliek.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button size="sm" onClick={deleteCorrespondenceHistory}>Dzēst</Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirmDelete(false)}>Atcelt</Button>
+          </div>
+        </div>
+      )}
       <TomsChat
         hideAvatar={chatCategory === "customs" || chatCategory === "gambling"}
         sidePanel
@@ -403,7 +433,17 @@ function VidPage() {
             ) : panel.step === "points" ? (
               <div className="min-h-0 flex-1 overflow-auto px-4 py-5 sm:px-6"><CustomsPoints requireAuth /></div>
             ) : (
-              chatSurface
+              <div
+                className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary px-4 py-8"
+                onClick={(event) => {
+                  const link = (event.target as HTMLElement).closest("a");
+                  if (link?.getAttribute("href") === "#kontakti") setPanel(null);
+                }}
+              >
+                <div className="flex h-[min(640px,100%)] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                  {chatSurface}
+                </div>
+              </div>
             )}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { matchStructuredForm, structuredFormNotice } from "@/lib/documents";
+import { matchStructuredForm } from "@/lib/documents";
 
 export type Msg = {
   from: "toms" | "user" | "system";
@@ -109,15 +109,11 @@ function specialistSummary(source: string, history: Msg[]): Summary {
   return { ...detectTopic(source), teksts: conversationTranscript(history) || source };
 }
 
-function handoff(history: Msg[], source: string, mode: "topic" | "uncertain" | "continue", topicTitle?: string): Msg[] {
-  const notice = mode === "continue" ? null : structuredFormNotice(source);
-  const offer = `Visa sarakste speciālistam aiziet tikai tad, ja nospiežat Jā. Līdz tam speciālistam nekas netiek nosūtīts. Pēc apstiprinājuma sarakste paliek arī sarakstes vēsturē 30 dienas. Atbilde parasti ir 10 darba dienu laikā, sarežģītos gadījumos līdz 1 mēnesim.${notice ? `\n\n${notice}` : ""}`;
-  const text =
-    mode === "continue"
-      ? "Papildināju speciālistam nododamo saraksti. Pārbaudiet, vai tajā ir visa saruna."
-      : mode === "topic"
-        ? `Šo tēmu es vērtēju kā sarežģītu: ${topicTitle}.\n\nTo nevaru pabeigt ar vienu atbildi. Varat zvanīt konsultatīvajam tālrunim ${PHONE} darba dienās 8:30–16:30 vai skatīt [Klientu apkalpošana](${SERVICE}).\n\n${offer}`
-        : `Uz šo man nav viennozīmīgas atbildes, tāpēc to nevaru pabeigt pats.\n\nVarat zvanīt konsultatīvajam tālrunim ${PHONE} darba dienās 8:30–16:30 vai skatīt [Klientu apkalpošana](${SERVICE}).\n\n${offer}`;
+const complexAnswer =
+  "Diemžēl nevaru atbildēt uz šo jautājumu. Piedāvāju sazināties ar speciālistu. Ja vēlaties, varu pārsūtīt jautājumu VID speciālistam. Vai varat zvanīt uz telefona numuru [67120000](tel:+37167120000), vai sazināties citādā veidā: sadaļa [Kontakti](#kontakti).";
+
+function handoff(history: Msg[], source: string, mode: "topic" | "uncertain" | "continue", _topicTitle?: string): Msg[] {
+  const text = mode === "continue" ? "Papildināju speciālistam nododamo saraksti. Pārbaudiet, vai tajā ir visa saruna." : complexAnswer;
   return [
     { from: "toms", text },
     {
