@@ -24,7 +24,7 @@ import {
 } from "@/components/CommunicationChoices";
 import { Button } from "@/components/ui/button";
 import { gamblingReply, publicReply, saveConversation, clearConversation, type Summary } from "@/lib/toms";
-import { clearChatHistory, clearSpecialistDraft, saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
+import { clearSpecialistDraft, saveSpecialistDraft, upsertChatThread } from "@/lib/correspondence";
 import vidCrest from "@/assets/vid-crest.png";
 import { CustomsPoints } from "@/components/CustomsPoints";
 import { completeUnclearReply, type AssistantDomain } from "@/lib/ai.functions";
@@ -97,7 +97,6 @@ function VidPage() {
     | { kind: "domain"; domain: CommunicationDomain; step: "menu" | "assistant" | "points" }
     | { kind: "service" }
   >(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const navigate = useNavigate();
   const categoryRef = useRef<CommunicationCategory>("chat");
   const threadId = useRef(crypto.randomUUID());
@@ -153,23 +152,6 @@ function VidPage() {
     navigate({ to: "/eds", search: { no: "toms" } });
   };
   const closePanel = () => setPanel(null);
-  const deleteCorrespondenceHistory = () => {
-    clearChatHistory();
-    threadId.current = crypto.randomUUID();
-    const domain = panel?.kind === "domain" ? panel.domain : "tax";
-    chat.reset([
-      {
-        from: "toms",
-        text:
-          domain === "customs"
-            ? "Labdien! Palīdzēšu atrast atbildi uz muitas jautājumu. Par ko vēlaties jautāt?"
-            : domain === "gambling"
-              ? "Labdien! Palīdzēšu atrast atbildi par azartspēlēm un izlozēm. Par ko vēlaties jautāt?"
-              : "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?",
-      },
-    ]);
-    setConfirmDelete(false);
-  };
   const backPanel = () => {
     if (panel?.kind === "domain" && panel.step !== "menu") setPanel({ kind: "domain", domain: panel.domain, step: "menu" });
     else setPanel(null);
@@ -197,17 +179,7 @@ function VidPage() {
           <h3 className="text-sm font-bold">{chatCategory === "customs" || chatCategory === "gambling" ? "Virtuālais asistents" : "Toms"}</h3>
           <p className="text-xs">VID virtuālais asistents{chatCategory === "customs" ? " · muitas jautājumi" : chatCategory === "gambling" ? " · azartspēles un izlozes" : ""}</p>
         </div>
-        <Button variant="outline" size="sm" className="h-auto shrink-0 whitespace-normal border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => setConfirmDelete(true)}>Izdzēst sarakstes vēsturi</Button>
       </div>
-      {confirmDelete && (
-        <div className="border-b border-border bg-secondary px-4 py-3 text-sm text-foreground">
-          <p>Vai dzēst sarakstes vēsturi? Čata sarunas tiks izdzēstas. Speciālistam jau nosūtītās vēstules paliek.</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Button size="sm" onClick={deleteCorrespondenceHistory}>Dzēst</Button>
-            <Button size="sm" variant="outline" onClick={() => setConfirmDelete(false)}>Atcelt</Button>
-          </div>
-        </div>
-      )}
       <TomsChat
         hideAvatar={chatCategory === "customs" || chatCategory === "gambling"}
         sidePanel
