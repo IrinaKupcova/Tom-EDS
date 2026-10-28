@@ -251,13 +251,6 @@ function EdsPage() {
   const applyCancel = <T extends { id: string }>(rows: T[], id: string, details: { reason: string; note: string }) => rows.map((row) => row.id === id ? { ...row, cancelled: true, cancelReason: details.reason, cancelNote: details.note } : row);
   const cancelLetter = (id: string, details: { reason: string; note: string }) => setOutbox((rows) => applyCancel(rows, id, details));
   const cancelConversation = (id: string, details: { reason: string; note: string }) => setConversations((rows) => applyCancel(rows, id, details));
-  const deleteCorrespondenceHistory = () => {
-    setConversations([]);
-    activeConversation.current = null;
-    requestText.current = "";
-    const current = cat === "customs" || cat === "gambling" ? cat : "chat";
-    if (cat === "chat" || cat === "customs" || cat === "gambling") chat.reset([{ from: "toms", text: greetings[current] }]);
-  };
   const opened = !signedIn || (tab === "compose" && (sent !== null || cat !== null));
   const openHistory = (filter: "all" | "chats" | "sent" | "inbox" | "drafts" | "unread" = "all") => { setHistoryFilter(filter); choose("history"); };
   const blockTitle = !signedIn
@@ -431,7 +424,7 @@ function EdsPage() {
               ) : cat === "history" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
                   <Button variant="outline" onClick={goBack} className="mb-4"><ArrowLeft size={16} /> Atpakaļ</Button>
-                  <CorrespondenceHistory key={historyFilter} initialFilter={historyFilter} outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} onDeleteChats={deleteCorrespondenceHistory} />
+                  <CorrespondenceHistory key={historyFilter} initialFilter={historyFilter} outbox={outbox} conversations={conversations} onResume={resumeConversation} onCancelLetter={cancelLetter} onCancelConversation={cancelConversation} />
                 </div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
@@ -522,16 +515,6 @@ function HistoryDate({ date }: { date?: string | undefined }) {
 }
 const cancelReasons = ["Jau atrisināju", "Kļūdaini iesniegts", "Cits iemesls"];
 
-function DeleteHistoryConfirm({ onDelete, onClose }: { onDelete: () => void; onClose: () => void }) {
-  return <div className="border-b border-border bg-secondary px-4 py-3 text-sm">
-    <p>Vai dzēst sarakstes vēsturi? Čata sarunas tiks izdzēstas. Speciālistam jau nosūtītās vēstules paliek.</p>
-    <div className="mt-2 flex flex-wrap gap-2">
-      <Button size="sm" onClick={onDelete}>Dzēst</Button>
-      <Button size="sm" variant="outline" onClick={onClose}>Atcelt</Button>
-    </div>
-  </div>;
-}
-
 function CancelForm({ onConfirm, onClose }: { onConfirm: (details: { reason: string; note: string }) => void; onClose: () => void }) {
   const [reason, setReason] = useState(cancelReasons[0]);
   const [note, setNote] = useState("");
@@ -556,9 +539,8 @@ function CancelStatus({ row, onCancel }: { row: { id: string; date?: string | un
   return open ? <CancelForm onConfirm={(details) => { onCancel(details); setOpen(false); }} onClose={() => setOpen(false)} /> : <Button variant="outline" size="sm" className="mt-3" onClick={() => setOpen(true)}>Atcelt ziņojumu</Button>;
 }
 
-function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", onResume, onCancelLetter, onCancelConversation, onDeleteChats }: { outbox: SavedLetter[]; conversations: SavedConversation[]; initialFilter?: "all" | "chats" | "sent" | "inbox" | "drafts" | "unread"; onResume: (row: SavedConversation) => void; onCancelLetter: (id: string, details: { reason: string; note: string }) => void; onCancelConversation: (id: string, details: { reason: string; note: string }) => void; onDeleteChats: () => void }) {
+function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", onResume, onCancelLetter, onCancelConversation }: { outbox: SavedLetter[]; conversations: SavedConversation[]; initialFilter?: "all" | "chats" | "sent" | "inbox" | "drafts" | "unread"; onResume: (row: SavedConversation) => void; onCancelLetter: (id: string, details: { reason: string; note: string }) => void; onCancelConversation: (id: string, details: { reason: string; note: string }) => void }) {
   const [filter, setFilter] = useState<"all" | "chats" | "sent" | "inbox" | "drafts" | "unread">(initialFilter);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const filters = [
     ["all", "Visas"],
     ["unread", "Nelasītās ziņas"],
@@ -574,9 +556,6 @@ function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", o
   return <section aria-labelledby="history-title">
     <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
     <p className="mb-3 text-sm leading-6 text-muted-foreground">Šeit ir sarunas ar virtuālo asistentu un ziņas, ko nosūtījāt VID. Tās glabājas 30 dienas. Nosūtītu ziņu var atcelt 1 dienas laikā.</p>
-    {conversations.length > 0 && (confirmDelete
-      ? <DeleteHistoryConfirm onDelete={() => { onDeleteChats(); setConfirmDelete(false); }} onClose={() => setConfirmDelete(false)} />
-      : <Button variant="outline" className="mb-4" onClick={() => setConfirmDelete(true)}>Izdzēst sarakstes vēsturi</Button>)}
     <div className="mb-4 flex flex-wrap gap-2" aria-label="Ko rādīt vēsturē">
       {filters.map(([id, label]) => (
         <Button key={id} variant="ghost" className={filter === id ? "eds-mail-active" : "eds-mail"} onClick={() => setFilter(id)}>{label}</Button>

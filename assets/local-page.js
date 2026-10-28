@@ -403,28 +403,6 @@
     try { stored = JSON.parse(sessionStorage.getItem("vid-eds-correspondence-v1") || "{}"); } catch (error) { stored = { conversations: [], outbox: [] }; }
     var chats = Array.isArray(stored.conversations) ? stored.conversations : [];
     var sent = Array.isArray(stored.outbox) ? stored.outbox : [];
-    if (chats.length) {
-      var deleteChats = document.createElement("button");
-      deleteChats.type = "button";
-      deleteChats.textContent = "Izdzēst sarakstes vēsturi";
-      deleteChats.style.cssText = "margin-bottom:16px;border:1px solid var(--primary);border-radius:6px;background:var(--card);padding:8px 12px;font-size:14px;font-weight:700;color:var(--primary);";
-      deleteChats.addEventListener("click", function () {
-        var ask = document.createElement("div");
-        ask.style.cssText = "margin-bottom:16px;border:1px solid var(--border);border-radius:6px;background:var(--secondary);padding:12px;font-size:14px;";
-        ask.innerHTML = '<p>Vai dzēst sarakstes vēsturi? Čata sarunas tiks izdzēstas. Speciālistam jau nosūtītās vēstules paliek.</p><div style="display:flex;gap:8px;margin-top:8px;"><button type="button" data-delete style="border-radius:6px;background:var(--primary);padding:6px 12px;font-size:14px;color:var(--primary-foreground);">Dzēst</button><button type="button" data-cancel style="border:1px solid var(--primary);border-radius:6px;background:var(--card);padding:6px 12px;font-size:14px;color:var(--primary);">Atcelt</button></div>';
-        deleteChats.replaceWith(ask);
-        ask.querySelector("[data-delete]").addEventListener("click", function () {
-          var saved = { conversations: [], outbox: [] };
-          try { saved = JSON.parse(sessionStorage.getItem("vid-eds-correspondence-v1") || "{}"); } catch (error) { saved = { conversations: [], outbox: [] }; }
-          saved.conversations = [];
-          if (!Array.isArray(saved.outbox)) saved.outbox = [];
-          try { sessionStorage.setItem("vid-eds-correspondence-v1", JSON.stringify(saved)); } catch (error) { /* Dzēšana paliek šajā skatā. */ }
-          showLocalHistory(filter);
-        });
-        ask.querySelector("[data-cancel]").addEventListener("click", function () { showLocalHistory(filter); });
-      });
-      box.insertBefore(deleteChats, filters);
-    }
     var notes = { unread: "Ziņas, kuras vēl neesat atvēruši. Šeit vēl nav nelasītu ziņu.", inbox: "Ziņas, ko VID jums ir nosūtījis. Šeit vēl nav saņemtu ziņu.", drafts: "Ziņas, ko sagatavojāt, bet vēl nenosūtījāt. Šeit vēl nav sagatavotu ziņu." };
     if (notes[filter] || (filter === "chats" && !chats.length) || (filter === "sent" && !sent.length) || (filter === "all" && !chats.length && !sent.length)) {
       var empty = document.createElement("p");
