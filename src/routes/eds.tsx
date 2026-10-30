@@ -86,6 +86,8 @@ function EdsPage() {
   const [tab, setTab] = useState<MailTab>("compose");
   const [historyFilter, setHistoryFilter] = useState<"all" | "chats" | "sent" | "inbox" | "drafts" | "unread">("all");
   const [signedIn, setSignedIn] = useState(!no);
+  const [choosingRole, setChoosingRole] = useState(false);
+  const [represented, setRepresented] = useState<"person" | "company" | null>(null);
   const [authTarget, setAuthTarget] = useState<CommunicationCategory | null>(null);
   const [cat, setCat] = useState<CommunicationCategory | null>(null);
   const [sent, setSent] = useState<Summary | null>(null);
@@ -134,6 +136,7 @@ function EdsPage() {
     setCat(step.cat);
     setSent(step.sent);
     setSignedIn(step.signedIn);
+    setChoosingRole(false);
     activeConversation.current = step.id;
     topic.current = step.topic;
     requestText.current = step.request;
@@ -146,6 +149,7 @@ function EdsPage() {
       if (saveStep) rememberStep();
       setAuthTarget(c);
       setSignedIn(false);
+      setChoosingRole(false);
       setCat(null);
       setSent(null);
       return;
@@ -163,7 +167,9 @@ function EdsPage() {
     if (c === "chat" || c === "customs" || c === "gambling") chat.reset([{ from: "toms", text: greetings[c] }]);
     else chat.reset([]);
   };
-  const continueConversation = () => {
+  const confirmRole = (role: "person" | "company") => {
+    setRepresented(role);
+    setChoosingRole(false);
     setSignedIn(true);
     if (no === "toms") {
       const previous = loadConversation();
@@ -384,12 +390,23 @@ function EdsPage() {
               <h2 className="text-base font-bold text-primary">{blockTitle}</h2>
               <Button variant="outline" onClick={goBack}><X size={16} /> Aizvērt</Button>
             </div>
+            {represented && signedIn && <p className="border-b border-border bg-secondary px-4 py-2 text-sm text-primary sm:px-6">Pārstāvat: {represented === "person" ? "Jānis Bērziņš" : "SIA Bērziņš"}</p>}
             <div className={`min-h-0 flex-1 ${signedIn && !sent && (cat === "chat" || cat === "customs" || cat === "gambling") ? "flex flex-col" : "overflow-auto"}`}>
               {!signedIn ? (
                 <section className="mx-auto mt-8 max-w-[430px] border border-border bg-card p-6" aria-labelledby="eds-login-title">
-                  <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">Pieslēgties EDS</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
-                  <p className="mb-5 text-sm leading-6">{no === "toms" ? "Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu." : point ? `Pēc pieslēgšanās varēsiet rakstīt: ${point}.` : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam."}</p>
-                  <Button className="w-full" onClick={continueConversation}>Pieslēgties EDS</Button>
+                  <div className="mb-4 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole size={20} /></span><div><h2 id="eds-login-title" className="text-base font-bold text-primary">{choosingRole ? "Izvēlieties lomu" : "Pieslēgties EDS"}</h2><p className="text-xs text-muted-foreground">Droša identificēšanās sarunas turpināšanai</p></div></div>
+                  {choosingRole ? (
+                    <>
+                      <p className="mb-4 text-sm leading-6">Pēc pieslēgšanās izvēlieties, ko šajā EDS sesijā pārstāvat.</p>
+                      <button type="button" className="mb-3 w-full rounded-lg border border-border bg-background p-4 text-left" onClick={() => confirmRole("person")}><span className="block text-sm font-bold text-primary">Pārstāv fizisko personu</span><span className="mt-1 block text-sm">Jānis Bērziņš</span></button>
+                      <button type="button" className="w-full rounded-lg border border-border bg-background p-4 text-left" onClick={() => confirmRole("company")}><span className="block text-sm font-bold text-primary">Pārstāv juridisko personu</span><span className="mt-1 block text-sm">SIA Bērziņš</span></button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mb-5 text-sm leading-6">{no === "toms" ? "Pēc pieslēgšanās turpināsiet iesākto sarunu ar VID virtuālo asistentu." : point ? `Pēc pieslēgšanās varēsiet rakstīt: ${point}.` : "Pēc pieslēgšanās varēsiet rakstīt VID speciālistam."}</p>
+                      <Button className="w-full" onClick={() => setChoosingRole(true)}>Pieslēgties EDS</Button>
+                    </>
+                  )}
                   <p className="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p>
                 </section>
               ) : sent ? (
@@ -536,7 +553,10 @@ function CancelStatus({ row, onCancel }: { row: { id: string; date?: string | un
   const [open, setOpen] = useState(false);
   if (row.cancelled) return <p className="mt-3 text-sm font-bold text-primary">Ziņojums atcelts{row.cancelReason ? ` · ${row.cancelReason}` : ""}{row.cancelNote ? ` — ${row.cancelNote}` : ""}</p>;
   if (!canCancelMessage(row.date)) return <p className="mt-3 text-xs text-muted-foreground">Ziņojumu var atcelt 1 dienas laikā.</p>;
-  return open ? <CancelForm onConfirm={(details) => { onCancel(details); setOpen(false); }} onClose={() => setOpen(false)} /> : <Button variant="outline" size="sm" className="mt-3" onClick={() => setOpen(true)}>Atcelt ziņojumu</Button>;
+  return <div className="mt-3">
+    <p className="mb-2 text-xs leading-5 text-muted-foreground">Atcelt var tikai tad, kamēr vēstule ir pārsūtīšanas posmā un speciālists vēl nav uzsācis tās apstrādi.</p>
+    {open ? <CancelForm onConfirm={(details) => { onCancel(details); setOpen(false); }} onClose={() => setOpen(false)} /> : <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Atcelt ziņojumu</Button>}
+  </div>;
 }
 
 function HistoryGroup({ title, count, children }: { title: string; count: number; children: ReactNode }) {

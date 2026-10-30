@@ -332,9 +332,12 @@
       article.appendChild(closed);
       return;
     }
+    var note = document.createElement("p");
+    note.className = "mt-3 text-xs leading-5";
+    note.textContent = "Atcelt var tikai tad, kamēr vēstule ir pārsūtīšanas posmā un speciālists vēl nav uzsācis tās apstrādi.";
     var button = document.createElement("button");
     button.type = "button";
-    button.className = "mt-3 rounded-md border border-primary px-3 py-2 text-sm text-primary";
+    button.className = "mt-2 rounded-md border border-primary px-3 py-2 text-sm text-primary";
     button.textContent = "Atcelt ziņojumu";
     button.addEventListener("click", function () {
       button.remove();
@@ -352,6 +355,7 @@
       form.querySelector("[data-close]").addEventListener("click", function () { showLocalHistory(filter); });
       article.appendChild(form);
     });
+    article.appendChild(note);
     article.appendChild(button);
   }
 
@@ -564,6 +568,7 @@
   }
 
   var pendingPoint = "";
+  var representedName = "";
   var customsGroups = [
     { region: "Rīga", points: ["Lidostas muitas kontroles punkts", "Rīgas brīvostas muitas kontroles punkts", "Importa muitas kontroles punkts", "Šķirotavas muitas kontroles punkts"] },
     { region: "Kurzeme", points: ["Liepājas ostas muitas kontroles punkts", "Ventspils ostas muitas kontroles punkts"] },
@@ -590,7 +595,32 @@
       pendingPoint = "";
       box.remove();
     });
-    box.querySelector("[data-login]").addEventListener("click", showForm);
+    box.querySelector("[data-login]").addEventListener("click", showRole);
+  }
+
+  function showRole() {
+    var box = document.getElementById("local-auth");
+    if (!box) return;
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Izvēlieties lomu</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
+      '<div class="mx-auto mt-8 w-full max-w-[430px] border border-border bg-card p-6">' +
+      '<p class="mb-4 text-sm leading-6">Pēc pieslēgšanās izvēlieties, ko šajā EDS sesijā pārstāvat.</p>' +
+      '<button type="button" data-person class="mb-3 w-full rounded-lg border border-border bg-background p-4 text-left"><span class="block text-sm font-bold text-primary">Pārstāv fizisko personu</span><span class="mt-1 block text-sm">Jānis Bērziņš</span></button>' +
+      '<button type="button" data-company class="w-full rounded-lg border border-border bg-background p-4 text-left"><span class="block text-sm font-bold text-primary">Pārstāv juridisko personu</span><span class="mt-1 block text-sm">SIA Bērziņš</span></button>' +
+      '<p class="mt-3 text-center text-[10px] text-muted-foreground">Pieslēgšanās šajā prototipā tiek demonstrēta.</p></div>';
+    box.querySelector("[data-close]").addEventListener("click", function () {
+      pendingPoint = "";
+      box.remove();
+    });
+    box.querySelector("[data-person]").addEventListener("click", function () {
+      representedName = "Jānis Bērziņš";
+      showForm();
+    });
+    box.querySelector("[data-company]").addEventListener("click", function () {
+      representedName = "SIA Bērziņš";
+      showForm();
+    });
   }
 
   function showForm() {
@@ -612,6 +642,7 @@
       '<form class="mx-auto w-full max-w-3xl px-4 py-6">' +
       '<p role="note" class="mb-4 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6"><strong>Paziņojums.</strong> Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.</p>' +
       (recipient ? '<p class="mb-4 text-sm leading-6">Adresāts: ' + recipient + ".</p>" : "") +
+      (representedName ? '<p class="mb-4 text-sm leading-6">Pārstāvat: ' + representedName + ".</p>" : "") +
       '<label class="mb-3 block text-sm text-primary">Tēma<select required data-tema class="input-vid mt-1 h-9 w-full"><option value="">— izvēlieties —</option>' + themeOptions + '</select></label>' +
       '<label class="mb-3 block text-sm text-primary">Apakštēma<select required data-apakstema class="input-vid mt-1 h-9 w-full" disabled><option value="">— vispirms izvēlieties tēmu —</option></select></label>' +
       '<label class="mb-4 block text-sm text-primary">Teksts<textarea required data-teksts class="input-vid mt-1 h-28 w-full" placeholder="Aprakstiet savu jautājumu vai sniedziet paskaidrojumu"></textarea></label>' +
@@ -774,7 +805,7 @@
     }
     if (/Pieslēgties EDS/.test(text)) {
       event.preventDefault();
-      showForm();
+      showRole();
       return;
     }
     if (text.includes("Sarakstīties ar virtuālo asistentu")) {
