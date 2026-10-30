@@ -145,7 +145,7 @@ function EdsPage() {
     chat.turn.current = latest ? latest.filter((m) => m.from === "user").length : step.turn;
   };
   const choose = (c: CommunicationCategory, saveStep = true, fromAuth = false) => {
-    if ((c === "doc" || c === "gambling-doc") && !fromAuth) {
+    if ((c === "doc" || c === "gambling-doc") && !fromAuth && !signedIn) {
       if (saveStep) rememberStep();
       setAuthTarget(c);
       setSignedIn(false);

@@ -47,7 +47,7 @@
         teksts: dialogue.join("\n\n"),
       }));
     } catch (error) { /* The confirmed letter can still be shown in this page. */ }
-    if (edsFile()) showAuth();
+    if (edsFile()) openSpecialistForm();
     else location.href = "eds/index.html#pieslegties";
   }
 
@@ -598,6 +598,17 @@
     box.querySelector("[data-login]").addEventListener("click", showRole);
   }
 
+  function openSpecialistForm() {
+    var box = document.getElementById("local-auth");
+    if (!box) {
+      box = document.createElement("section");
+      box.id = "local-auth";
+      box.className = "fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background";
+      document.body.appendChild(box);
+    }
+    showForm();
+  }
+
   function showRole() {
     var box = document.getElementById("local-auth");
     if (!box) return;
@@ -741,7 +752,7 @@
       pendingPoint = "";
       box.remove();
       sessionStorage.removeItem("vid-eds-specialist-draft");
-      if (edsFile()) showAuth();
+      if (edsFile()) openSpecialistForm();
       else location.href = "eds/index.html#pieslegties";
     });
     var points = box.querySelector("[data-points]");
@@ -764,7 +775,8 @@
       button.addEventListener("click", function () {
         pendingPoint = button.getAttribute("data-write") || "";
         box.remove();
-        showAuth();
+        if (edsFile()) openSpecialistForm();
+        else showAuth();
       });
     });
   }
@@ -799,7 +811,7 @@
       event.preventDefault();
       pendingPoint = "";
       sessionStorage.removeItem("vid-eds-specialist-draft");
-      if (edsFile()) showAuth();
+      if (edsFile()) openSpecialistForm();
       else location.href = "eds/index.html#pieslegties";
       return;
     }
