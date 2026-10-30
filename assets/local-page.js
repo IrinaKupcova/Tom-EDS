@@ -263,7 +263,7 @@
     var nav = document.querySelector('[aria-label="Sarakstes sadaļas"]');
     if (nav) nav.hidden = true;
     var style = document.createElement("style");
-    style.textContent = ".eds-mail,.eds-mail-active{height:auto;min-height:36px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;font-weight:700;line-height:1.3;text-align:left}.eds-mail-active{border-color:var(--primary);background:var(--secondary);color:var(--primary)}#local-history{padding:16px 22px 32px}#local-history h2{margin-bottom:8px;font-size:16px;font-weight:700;color:var(--primary)}#local-history article{padding:12px 0;border-bottom:1px solid var(--border)}";
+    style.textContent = ".eds-mail,.eds-mail-active{height:auto;min-height:36px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;font-weight:700;line-height:1.3;text-align:left}.eds-mail-active{border-color:var(--primary);background:var(--secondary);color:var(--primary)}#local-history{padding:16px 22px 32px}#local-history h2{margin-bottom:8px;font-size:16px;font-weight:700;color:var(--primary)}#local-history .history-group{margin:0 0 20px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--card)}#local-history .history-group>h3{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--secondary);font-size:14px;font-weight:700;color:var(--primary)}#local-history .history-count{border-radius:999px;background:var(--primary);padding:2px 8px;font-size:12px;color:var(--primary-foreground)}#local-history article{margin:12px 16px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--background)}#local-history .history-empty{margin:0;padding:16px;font-size:14px;color:var(--muted-foreground)}";
     document.head.appendChild(style);
     Array.prototype.forEach.call(document.querySelectorAll("button"), function (button) {
       if (button.closest("#local-history, #local-domain, #local-auth, #local-service")) return;
@@ -404,17 +404,41 @@
     var chats = Array.isArray(stored.conversations) ? stored.conversations : [];
     var sent = Array.isArray(stored.outbox) ? stored.outbox : [];
     var notes = { unread: "Ziņas, kuras vēl neesat atvēruši. Šeit vēl nav nelasītu ziņu.", inbox: "Ziņas, ko VID jums ir nosūtījis. Šeit vēl nav saņemtu ziņu.", drafts: "Ziņas, ko sagatavojāt, bet vēl nenosūtījāt. Šeit vēl nav sagatavotu ziņu." };
-    if (notes[filter] || (filter === "chats" && !chats.length) || (filter === "sent" && !sent.length) || (filter === "all" && !chats.length && !sent.length)) {
-      var empty = document.createElement("p");
-      empty.className = "text-sm";
-      empty.textContent = notes[filter] || (filter === "chats" ? "Šeit vēl nav sarunu ar asistentu." : filter === "sent" ? "Šeit vēl nav nosūtītu ziņu." : "Šeit vēl nav sarunu vai nosūtītu ziņu.");
-      if (notes[filter] || filter === "chats" || filter === "sent" || filter === "all") box.appendChild(empty);
-      if (notes[filter] || ((filter === "chats" || filter === "all") && !chats.length) && ((filter === "sent" || filter === "all") && !sent.length)) return;
+    if (notes[filter]) {
+      var folder = document.createElement("p");
+      folder.className = "text-sm";
+      folder.textContent = notes[filter];
+      box.appendChild(folder);
+      return;
     }
-    if (filter === "all" || filter === "chats") chats.forEach(function (row) {
+    var specialistLetters = [];
+    var assistantLetters = [];
+    sent.forEach(function (item) {
+      if (item && item.origin === "assistant") assistantLetters.push(item);
+      else specialistLetters.push(item);
+    });
+    function renderGroup(title, rows, renderRow) {
+      var group = document.createElement("section");
+      group.className = "history-group";
+      var heading = document.createElement("h3");
+      heading.appendChild(document.createTextNode(title));
+      var count = document.createElement("span");
+      count.className = "history-count";
+      count.textContent = String(rows.length);
+      heading.appendChild(count);
+      group.appendChild(heading);
+      if (!rows.length) {
+        var empty = document.createElement("p");
+        empty.className = "history-empty";
+        empty.textContent = "Šeit vēl nav ierakstu.";
+        group.appendChild(empty);
+      } else rows.forEach(function (row) { group.appendChild(renderRow(row)); });
+      box.appendChild(group);
+    }
+    function chatArticle(row) {
       var article = document.createElement("article");
       appendHistoryDate(article, row && row.date);
-      var heading = document.createElement("h3");
+      var heading = document.createElement("h4");
       heading.className = "text-sm font-bold text-primary";
       var first = row && Array.isArray(row.messages) ? row.messages.filter(function (message) { return message.from === "user"; })[0] : null;
       heading.textContent = first && first.text ? first.text : "Saruna ar asistentu";
@@ -424,11 +448,11 @@
         badge.textContent = "Demonstrācijas paraugs";
         article.appendChild(badge);
       }
-      var note = document.createElement("p");
-      note.className = "mt-1 text-xs";
-      note.textContent = "Saruna ar virtuālo asistentu";
       article.appendChild(heading);
-      article.appendChild(note);
+      var kind = document.createElement("p");
+      kind.className = "mt-1 text-xs";
+      kind.textContent = "Saruna ar virtuālo asistentu";
+      article.appendChild(kind);
       if (row && Array.isArray(row.messages)) row.messages.forEach(function (message) {
         if (!message || message.from === "system") return;
         var line = document.createElement("p");
@@ -437,12 +461,12 @@
         article.appendChild(line);
       });
       appendCancelControl(article, row, "chat", filter);
-      box.appendChild(article);
-    });
-    if (filter === "all" || filter === "sent") sent.forEach(function (item) {
+      return article;
+    }
+    function letterArticle(item, fromAssistant) {
       var article = document.createElement("article");
       appendHistoryDate(article, item && item.date);
-      var heading = document.createElement("h3");
+      var heading = document.createElement("h4");
       heading.className = "text-sm font-bold text-primary";
       heading.textContent = item && item.tema ? item.tema : "Nosūtīta ziņa";
       if (item && item.demo) {
@@ -452,7 +476,7 @@
         article.appendChild(badge);
       }
       article.appendChild(heading);
-      if (item && item.origin === "assistant") {
+      if (fromAssistant) {
         var note = document.createElement("p");
         note.className = "mt-1 text-sm";
         note.style.fontWeight = "700";
@@ -474,8 +498,11 @@
         article.appendChild(body);
       }
       appendCancelControl(article, item, "letter", filter);
-      box.appendChild(article);
-    });
+      return article;
+    }
+    if (filter === "all" || filter === "sent") renderGroup("Sarakste ar VID speciālistu", specialistLetters, function (item) { return letterArticle(item, false); });
+    if (filter === "all" || filter === "chats") renderGroup("Sarakste ar virtuālo asistentu", chats, chatArticle);
+    if (filter === "all" || filter === "sent") renderGroup("Virtuālā asistenta nosūtītie ziņojumi VID speciālistam", assistantLetters, function (item) { return letterArticle(item, true); });
   }
 
   function saveSentLetter(letter) {

@@ -539,6 +539,20 @@ function CancelStatus({ row, onCancel }: { row: { id: string; date?: string | un
   return open ? <CancelForm onConfirm={(details) => { onCancel(details); setOpen(false); }} onClose={() => setOpen(false)} /> : <Button variant="outline" size="sm" className="mt-3" onClick={() => setOpen(true)}>Atcelt ziņojumu</Button>;
 }
 
+function HistoryGroup({ title, count, children }: { title: string; count: number; children: ReactNode }) {
+  return (
+    <section className="mb-6 overflow-hidden rounded-lg border border-border bg-card">
+      <h4 className="flex items-center justify-between gap-3 border-b border-border bg-secondary px-4 py-3 text-sm font-bold text-primary">
+        {title}
+        <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{count}</span>
+      </h4>
+      <div className="space-y-3 p-4">
+        {count === 0 ? <p className="text-sm text-muted-foreground">Šeit vēl nav ierakstu.</p> : children}
+      </div>
+    </section>
+  );
+}
+
 function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", onResume, onCancelLetter, onCancelConversation }: { outbox: SavedLetter[]; conversations: SavedConversation[]; initialFilter?: "all" | "chats" | "sent" | "inbox" | "drafts" | "unread"; onResume: (row: SavedConversation) => void; onCancelLetter: (id: string, details: { reason: string; note: string }) => void; onCancelConversation: (id: string, details: { reason: string; note: string }) => void }) {
   const [filter, setFilter] = useState<"all" | "chats" | "sent" | "inbox" | "drafts" | "unread">(initialFilter);
   const filters = [
@@ -553,6 +567,9 @@ function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", o
   const showSent = filter === "all" || filter === "sent";
   const visibleChats = showChats ? conversations : [];
   const visibleSent = showSent ? outbox : [];
+  const specialistLetters = visibleSent.filter((item) => item.origin !== "assistant");
+  const assistantLetters = visibleSent.filter((item) => item.origin === "assistant");
+  const folderNote = filter === "unread" ? "Ziņas, kuras vēl neesat atvēruši. Šeit vēl nav nelasītu ziņu." : filter === "inbox" ? "Ziņas, ko VID jums ir nosūtījis. Šeit vēl nav saņemtu ziņu." : filter === "drafts" ? "Ziņas, ko sagatavojāt, bet vēl nenosūtījāt. Šeit vēl nav sagatavotu ziņu." : "";
   return <section aria-labelledby="history-title">
     <h3 id="history-title" className="mb-1 text-base font-bold text-primary">Sarakstes vēsture</h3>
     <p className="mb-3 text-sm leading-6 text-muted-foreground">Šeit ir sarunas ar virtuālo asistentu un ziņas, ko nosūtījāt VID. Tās glabājas 30 dienas. Nosūtītu ziņu var atcelt 1 dienas laikā.</p>
@@ -565,27 +582,40 @@ function CorrespondenceHistory({ outbox, conversations, initialFilter = "all", o
       <span className="rounded bg-primary px-2 py-1">Parastos gadījumos — 10 darba dienas</span>
       <span className="rounded bg-primary px-2 py-1">Sarežģītos gadījumos — līdz vienam mēnesim</span>
     </div>
-    <div className="divide-y divide-border border-y border-border">
-      {visibleChats.map((row) => <article key={row.id} className="py-4">
-        <HistoryDate date={row.date} />
-        {row.demo && <p className="mb-1 text-xs font-bold text-primary">Demonstrācijas paraugs</p>}
-        <h4 className="text-sm font-bold text-primary">{row.messages.find((m) => m.from === "user")?.text}</h4>
-        <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Saruna ar virtuālo asistentu</summary>
-          <div className="mt-3 space-y-3">{row.messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
-        </details>
-        <div className="mt-3">{!row.cancelled && <Button variant="outline" size="sm" className="mr-2" onClick={() => onResume(row)}>Turpināt saraksti</Button>}<CancelStatus row={row} onCancel={(details) => onCancelConversation(row.id, details)} /></div>
-      </article>)}
-      {visibleSent.map((item) => <article key={item.id} className="py-4">
-        <HistoryDate date={item.date} />
-        {item.demo && <p className="mb-1 text-xs font-bold text-primary">Demonstrācijas paraugs</p>}
-        <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
-        {item.origin === "assistant" && <p className="mt-1 text-sm font-bold text-primary">Speciālistam vēstuli nosūtīja čatbots</p>}
-        {(item.struktura || item.cancelled) && <p className="mt-1 text-xs text-muted-foreground">{[item.struktura, item.cancelled ? "Ziņojums atcelts" : ""].filter(Boolean).join(" · ")}</p>}
-        {item.origin === "assistant" ? <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Čata vēsture, ko pārsūtīja čatbots</summary><p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p></details> : <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>}
-        <CancelStatus row={item} onCancel={(details) => onCancelLetter(item.id, details)} />
-      </article>)}
-      {!visibleChats.length && !visibleSent.length && <p className="py-4 text-sm text-muted-foreground">{filter === "unread" ? "Ziņas, kuras vēl neesat atvēruši. Šeit vēl nav nelasītu ziņu." : filter === "inbox" ? "Ziņas, ko VID jums ir nosūtījis. Šeit vēl nav saņemtu ziņu." : filter === "drafts" ? "Ziņas, ko sagatavojāt, bet vēl nenosūtījāt. Šeit vēl nav sagatavotu ziņu." : filter === "sent" ? "Šeit vēl nav nosūtītu ziņu." : filter === "chats" ? "Šeit vēl nav sarunu ar asistentu." : "Šeit vēl nav sarunu vai nosūtītu ziņu."}</p>}
-    </div>
+    {folderNote ? <p className="text-sm text-muted-foreground">{folderNote}</p> : <>
+      {showSent && <HistoryGroup title="Sarakste ar VID speciālistu" count={specialistLetters.length}>
+        {specialistLetters.map((item) => <article key={item.id} className="rounded-md border border-border bg-background px-4 py-3">
+          <HistoryDate date={item.date} />
+          {item.demo && <p className="mb-1 text-xs font-bold text-primary">Demonstrācijas paraugs</p>}
+          <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
+          {(item.struktura || item.cancelled) && <p className="mt-1 text-xs text-muted-foreground">{[item.struktura, item.cancelled ? "Ziņojums atcelts" : ""].filter(Boolean).join(" · ")}</p>}
+          <p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p>
+          <CancelStatus row={item} onCancel={(details) => onCancelLetter(item.id, details)} />
+        </article>)}
+      </HistoryGroup>}
+      {showChats && <HistoryGroup title="Sarakste ar virtuālo asistentu" count={visibleChats.length}>
+        {visibleChats.map((row) => <article key={row.id} className="rounded-md border border-border bg-background px-4 py-3">
+          <HistoryDate date={row.date} />
+          {row.demo && <p className="mb-1 text-xs font-bold text-primary">Demonstrācijas paraugs</p>}
+          <h4 className="text-sm font-bold text-primary">{row.messages.find((m) => m.from === "user")?.text}</h4>
+          <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Saruna ar virtuālo asistentu</summary>
+            <div className="mt-3 space-y-3">{row.messages.filter((m) => m.from !== "system").map((m, i) => <div key={i}><p className="text-xs font-bold text-primary">{m.from === "user" ? "Jūs" : "Virtuālais asistents"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.text}</p></div>)}</div>
+          </details>
+          <div className="mt-3">{!row.cancelled && <Button variant="outline" size="sm" className="mr-2" onClick={() => onResume(row)}>Turpināt saraksti</Button>}<CancelStatus row={row} onCancel={(details) => onCancelConversation(row.id, details)} /></div>
+        </article>)}
+      </HistoryGroup>}
+      {showSent && <HistoryGroup title="Virtuālā asistenta nosūtītie ziņojumi VID speciālistam" count={assistantLetters.length}>
+        {assistantLetters.map((item) => <article key={item.id} className="rounded-md border border-border bg-background px-4 py-3">
+          <HistoryDate date={item.date} />
+          {item.demo && <p className="mb-1 text-xs font-bold text-primary">Demonstrācijas paraugs</p>}
+          <h4 className="text-sm font-bold text-primary">{item.tema}</h4>
+          <p className="mt-1 text-sm font-bold text-primary">Speciālistam vēstuli nosūtīja čatbots</p>
+          {(item.struktura || item.cancelled) && <p className="mt-1 text-xs text-muted-foreground">{[item.struktura, item.cancelled ? "Ziņojums atcelts" : ""].filter(Boolean).join(" · ")}</p>}
+          <details className="mt-2 text-sm"><summary className="cursor-pointer text-primary">Čata vēsture, ko pārsūtīja čatbots</summary><p className="mt-2 whitespace-pre-wrap text-sm">{item.teksts}</p></details>
+          <CancelStatus row={item} onCancel={(details) => onCancelLetter(item.id, details)} />
+        </article>)}
+      </HistoryGroup>}
+    </>}
   </section>;
 }
 
