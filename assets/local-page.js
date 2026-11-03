@@ -629,7 +629,7 @@
     };
     var themeOptions = Object.keys(themes).map(function (name) { return "<option>" + name + "</option>"; }).join("");
     box.innerHTML =
-      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">' + (recipient ? "Rakstīt: " + recipient : "Iesniegt dokumentu vai rakstīt speciālistam") + '</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
+      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">' + (recipient ? "Rakstīt: " + recipient : "Rakstīt VID speciālistam") + '</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
       '<form class="mx-auto w-full max-w-3xl px-4 py-6">' +
       '<p role="note" class="mb-4 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6"><strong>Paziņojums.</strong> Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.</p>' +
       (recipient ? '<p class="mb-4 text-sm leading-6">Adresāts: ' + recipient + ".</p>" : "") +

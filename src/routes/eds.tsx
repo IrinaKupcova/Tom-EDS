@@ -270,7 +270,7 @@ function EdsPage() {
           : cat === "gambling-menu"
             ? "Azartspēļu un izložu joma"
       : cat === "doc" || cat === "gambling-doc"
-        ? "Iesniegt dokumentu vai rakstīt speciālistam"
+        ? "Rakstīt VID speciālistam"
         : cat === "history"
           ? "Sarakstes vēsture"
           : cat === "customs"
@@ -726,7 +726,7 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
       }}
     >
       <h3 className="text-base font-bold text-primary">
-        Iesniegt dokumentu vai rakstīt speciālistam
+        Rakstīt VID speciālistam
       </h3>
       <p role="note" className="mb-4 mt-3 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">
         <span className="font-bold">Paziņojums. </span>
