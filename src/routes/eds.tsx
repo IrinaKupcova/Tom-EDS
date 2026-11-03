@@ -72,11 +72,9 @@ const MENU = [
 ];
 type MailTab = "compose";
 const greetings = {
-   chat: "Labdien! Esmu VID virtuālais asistents. Atbildu uz nodokļu jautājumiem un sameklēju informāciju par Jums iestādes IS. Tikai sarežģītus jautājumus nododu speciālistam. Šajā prototipā atbildes un dati ir simulēti. Par ko vēlaties jautāt?",
-  customs:
-    "Labdien! Esmu VID virtuālais asistents. Atbildu uz muitas jautājumiem un sameklēju Jūsu informāciju muitas IS. Tikai sarežģītus jautājumus nododu muitas speciālistam. Šajā prototipā atbildes un dati ir simulēti.",
-  gambling:
-    "Labdien! Esmu VID virtuālais asistents. Atbildu uz azartspēļu un izložu jautājumiem. Tikai sarežģītus jautājumus nododu jomas speciālistam. Šajā prototipā atbildes ir simulētas.",
+  chat: "Labdien! Esmu Toms, VID virtuālais asistents. Kā varu palīdzēt?",
+  customs: "Labdien! Palīdzēšu atrast atbildi uz muitas jautājumu. Par ko vēlaties jautāt?",
+  gambling: "Labdien! Palīdzēšu atrast atbildi par azartspēlēm un izlozēm. Par ko vēlaties jautāt?",
 };
 type SavedConversation = { id: string; category: "chat" | "customs" | "gambling"; messages: Msg[]; date?: string | undefined; cancelled?: boolean | undefined; cancelReason?: string | undefined; cancelNote?: string | undefined; demo?: boolean | undefined };
 type SavedLetter = Summary & { id: string; date?: string | undefined; cancelled?: boolean | undefined; cancelReason?: string | undefined; cancelNote?: string | undefined; origin?: "client" | "assistant" | undefined; demo?: boolean | undefined };
@@ -452,40 +450,20 @@ function EdsPage() {
                 <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary px-4 py-8">
                   <div className="flex h-[min(640px,100%)] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg">
                   <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                    <div className="flex items-center gap-3 border-b border-border bg-chat-header px-4 py-3">
-                      {cat !== "customs" && cat !== "gambling" && <TomsAvatar size={30} virtualAssistant />}
+                    <div className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
+                      <TomsAvatar size={36} />
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-bold text-primary">Virtuālais asistents</h3>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          <span className="online-dot" />
-                          {cat === "customs" ? "Muitas jautājumi" : cat === "gambling" ? "Azartspēļu un izložu jautājumi" : "Nodokļu jomas jautājumi"}
-                        </p>
+                        <h3 className="text-sm font-bold">{cat === "chat" ? "Toms" : "Virtuālais asistents"}</h3>
+                        <p className="text-xs">{cat === "customs" ? "VID virtuālais asistents · muita" : cat === "gambling" ? "VID virtuālais asistents · azartspēles" : "VID virtuālais asistents"}</p>
                       </div>
                     </div>
                     <TomsChat
-                      hideAvatar={cat === "customs" || cat === "gambling"}
                       sidePanel
-                      virtualAssistant
                       messages={chat.messages}
                       onSend={chat.send}
                       busy={chat.busy}
                       onSubmitSummary={(summary) => submit(summary, "assistant")}
                     />
-                  </section>
-                  <section className="shrink-0 border-t border-border bg-card px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      {cat === "gambling" ? (
-                        <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => { blankSpecialistLetter(); choose("gambling-doc"); }}>Rakstīt speciālistam</Button>
-                      ) : (
-                        <>
-                          <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => choose(cat === "customs" ? "chat" : "customs")}>
-                            {cat === "customs" ? "Rakstīt par nodokļu jautājumu" : "Rakstīt par muitas jautājumu"}
-                          </Button>
-                          <Button variant="outline" size="sm" className="h-auto whitespace-normal border-primary text-primary" onClick={() => { blankSpecialistLetter(); choose("doc"); }}>Iesniegt dokumentu vai rakstīt speciālistam</Button>
-                        </>
-                      )}
-                    </div>
-                    {cat === "customs" && <div className="mt-3 max-h-48 overflow-auto"><CustomsPoints /></div>}
                   </section>
                   </div>
                 </div>

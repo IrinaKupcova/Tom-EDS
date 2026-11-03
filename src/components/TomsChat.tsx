@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
 import type { Msg, Summary } from "@/lib/toms";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,12 +7,6 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputTextarea,
-  PromptInputFooter,
-  PromptInputSubmit,
-} from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import tomsPortrait from "@/assets/toms-portrait.png";
 
@@ -54,7 +47,7 @@ export function TomsChat({
   hideAvatar = false,
 }: Props) {
   const [text, setText] = useState("");
-  const textarea = useRef<HTMLTextAreaElement>(null);
+  const field = useRef<HTMLInputElement>(null);
   const send = (value: string) => {
     if (!value.trim() || busy) return;
     onSend(value.trim());
@@ -115,7 +108,7 @@ export function TomsChat({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => textarea.current?.focus()}
+                              onClick={() => field.current?.focus()}
                             >
                               Papildināt
                             </Button>
@@ -151,33 +144,26 @@ export function TomsChat({
         </ConversationContent>
         <ConversationScrollButton aria-label="Uz pēdējo ziņu" />
       </Conversation>
-      <div className="border-t border-border bg-card p-3">
-        <PromptInput className="toms-composer" onSubmit={({ text: value }) => send(value)}>
-          <PromptInputTextarea
-            ref={textarea}
-            aria-label={virtualAssistant ? "Ziņa virtuālajam asistentam" : "Ziņa Tomam"}
-            placeholder="Rakstiet šeit…"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={busy}
-            className="min-h-9 text-sm"
-          />
-          <PromptInputFooter className="justify-end">
-            <PromptInputSubmit
-              aria-label="Nosūtīt ziņu"
-              title="Nosūtīt ziņu"
-              status={busy ? "submitted" : "ready"}
-              disabled={busy || !text.trim()}
-              className="size-8 shrink-0 rounded-full"
-            >
-              <Send size={15} />
-            </PromptInputSubmit>
-          </PromptInputFooter>
-        </PromptInput>
-        <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          {virtualAssistant ? "Virtuālais asistents · atbildes un IS dati ir simulēti. Neievadiet īstus sensitīvus personas datus." : "Sarunu veic mākslīgais intelekts. Neievadiet sensitīvus personas datus."}
-        </p>
-      </div>
+      <form
+        className="flex gap-2 border-t border-border bg-card p-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          send(text);
+        }}
+      >
+        <input
+          ref={field}
+          className="input-vid min-w-0 flex-1"
+          aria-label={virtualAssistant ? "Ziņa virtuālajam asistentam" : "Ziņa Tomam"}
+          placeholder="Rakstiet šeit…"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          disabled={busy}
+        />
+        <Button type="submit" disabled={busy} className="rounded-md px-3 py-2 text-sm">
+          Sūtīt
+        </Button>
+      </form>
     </div>
   );
 }
