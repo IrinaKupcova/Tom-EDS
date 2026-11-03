@@ -188,11 +188,6 @@ function VidPage() {
         onSend={chat.send}
         onAuth={auth}
         onSubmitSummary={handoff}
-        suggestions={chatCategory === "customs"
-          ? ["Pasta sūtījumi", "Vai jāmaksā muita par paku?"]
-          : chatCategory === "gambling"
-            ? ["Azartspēļu organizēšana", "Izložu atļauja"]
-            : ["Kad atmaksās manu nodokļu pārmaksu?", "Klientu apkalpošanas darba laiks", "Vai jāmaksā muita par paku?"]}
       />
     </section>
   );

@@ -81,12 +81,6 @@
     return remember(text, specialistOffer, true);
   }
 
-  var topics = {
-    chat: ["Kad atmaksās manu nodokļu pārmaksu?", "Klientu apkalpošanas darba laiks", "Vai jāmaksā muita par paku?"],
-    customs: ["Pasta sūtījumi", "Vai jāmaksā muita par paku?"],
-    gambling: ["Azartspēļu organizēšana", "Izložu atļauja"],
-  };
-
   function portraitSrc() {
     return (edsFile() ? "../assets/" : "assets/") + "toms-portrait-DBpNN-UY.png";
   }
@@ -111,18 +105,6 @@
     bubble.textContent = greetings[next];
     row.appendChild(bubble);
     log.appendChild(row);
-    var chips = document.createElement("div");
-    chips.className = "ml-8 mt-3 flex flex-wrap gap-1.5";
-    chips.setAttribute("data-topics", "");
-    topics[next].forEach(function (label) {
-      var button = document.createElement("button");
-      button.type = "button";
-      button.className = "rounded-full border border-chat-primary bg-card px-3 py-1.5 text-left text-xs text-chat-primary";
-      button.textContent = label;
-      button.addEventListener("click", function () { sendText(label); });
-      chips.appendChild(button);
-    });
-    log.appendChild(chips);
   }
 
   function appendSpecialistOffer(bubble) {

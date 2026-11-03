@@ -468,13 +468,6 @@ function EdsPage() {
                       onSend={chat.send}
                       busy={chat.busy}
                       onSubmitSummary={(summary) => submit(summary, "assistant")}
-                      suggestions={
-                        cat === "customs"
-                          ? ["Pasta sūtījumi", "Muitas jautājumi", "Rakstu uz muitas punktu"]
-                          : cat === "gambling"
-                            ? ["Azartspēļu organizēšana", "Izložu atļauja"]
-                            : ["Gada ienākumu deklarācija", "Kāds man ir parāds?", "Darbības EDS", "Nepiekrītu aprēķinātajam parādam"]
-                      }
                     />
                   </section>
                   <section className="shrink-0 border-t border-border bg-card px-4 py-3">
