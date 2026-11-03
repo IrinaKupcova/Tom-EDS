@@ -261,7 +261,7 @@ function VidPage() {
               e.preventDefault();
               if (query.trim()) ask(query);
             }}
-            className="mx-auto flex max-w-[940px] gap-2 px-5 pb-3"
+            className="mx-auto flex max-w-[1120px] gap-2 px-8 pb-3 sm:px-12"
           >
             <input
               aria-label="Meklēt vid.gov.lv"
@@ -345,7 +345,7 @@ function VidPage() {
         </div>
       </section>
       <section id="sazina" className="border-t border-border bg-secondary py-9">
-        <div className="mx-auto max-w-[940px] px-5">
+        <div className="mx-auto max-w-[1120px] px-8 sm:px-12">
           <h2 className="text-center text-2xl font-bold">Saziņa ar VID</h2>
           <p className="mb-8 mt-3 text-center text-sm text-muted-foreground">
             Saņemiet atbildi uzreiz vai nosūtiet jautājumu atbildīgajam VID speciālistam.
