@@ -69,7 +69,7 @@ export function DomainActions({
         <ChoiceTile title="Rakstīt VID speciālistam" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim" onClick={onSpecialist} />
       </div>
       {domain === "customs" && onPoints && (
-        <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-primary"><Building2 size={18} /> Rakstīt uz muitas kontroles punktu</Button>
+        <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-sm font-bold leading-5 text-primary"><Building2 size={18} /> Rakstīt uz muitas kontroles punktu</Button>
       )}
     </div>
   );

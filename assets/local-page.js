@@ -689,7 +689,7 @@
       (representedName ? '<p class="mb-4 text-sm leading-6">Pārstāvat: ' + representedName + ".</p>" : "") +
       '<label class="mb-3 block text-sm text-primary">Tēma<select required data-tema class="input-vid mt-1 h-9 w-full"><option value="">— izvēlieties —</option>' + themeOptions + '</select></label>' +
       '<label class="mb-3 block text-sm text-primary">Apakštēma<select required data-apakstema class="input-vid mt-1 h-9 w-full" disabled><option value="">— vispirms izvēlieties tēmu —</option></select></label>' +
-      '<label class="mb-4 block text-sm text-primary">Teksts<textarea required data-teksts class="input-vid mt-1 h-28 w-full" placeholder="Aprakstiet savu jautājumu vai sniedziet paskaidrojumu"></textarea></label>' +
+      '<label class="mb-4 block text-sm text-primary">Teksts<textarea required data-teksts class="input-vid mt-1 h-28 w-full" placeholder="Brīvā teksta lauks"></textarea></label>' +
       '<label class="mb-1 block text-sm text-primary">Pielikums<input data-pielikums class="mt-1 block w-full text-xs" type="file" multiple></label>' +
       '<p class="mb-4 text-xs text-muted-foreground">Atļautie formāti: ODT, ODS, DOCX, XLSX, PDF, JPG, JPEG, TIF, TIFF, PNG, EDOC, ASICE, HEIC, XHTML, ZIP. Viens fails līdz 20 MB, kopā līdz 50 MB.</p>' +
       '<div class="flex gap-3"><button type="submit" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Nosūtīt</button><button type="button" data-close class="rounded-md border border-primary px-4 py-2 text-sm text-primary">Aizvērt</button></div>' +
@@ -770,7 +770,7 @@
       '<div class="mx-auto grid w-full max-w-3xl gap-3 px-4 py-6 sm:grid-cols-2">' +
       '<button type="button" data-assistant class="rounded-lg border border-input bg-card p-4 text-left text-sm font-bold text-primary">Sarakstīties ar virtuālo asistentu<span class="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Tūlītējas atbildes visu diennakti</span></button>' +
       '<button type="button" data-specialist class="rounded-lg border border-input bg-card p-4 text-left text-sm font-bold text-primary">Rakstīt VID speciālistam<span class="mt-2 inline-block rounded bg-primary px-2 py-1 text-xs font-bold text-primary-foreground">Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim</span></button>' +
-      (next === "customs" ? '<button type="button" data-points class="rounded-md border border-primary px-4 py-2 text-sm text-primary sm:col-span-2">Rakstīt uz muitas kontroles punktu</button>' : "") +
+      (next === "customs" ? '<button type="button" data-points class="rounded-md border border-primary px-4 py-2 text-sm font-bold leading-5 text-primary sm:col-span-2">Rakstīt uz muitas kontroles punktu</button>' : "") +
       "</div>";
     box.querySelector("[data-back]").addEventListener("click", function () { box.remove(); });
     box.querySelector("[data-close]").addEventListener("click", function () { box.remove(); });

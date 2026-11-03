@@ -769,7 +769,7 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
           required
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Aprakstiet savu jautājumu vai sniedziet paskaidrojumu"
+          placeholder="Brīvā teksta lauks"
           className="input-vid mt-1 h-[130px] w-full resize-y"
         />
       </label>
