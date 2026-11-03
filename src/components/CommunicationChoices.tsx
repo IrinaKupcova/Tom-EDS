@@ -65,19 +65,14 @@ export function DomainActions({
     <div>
       <h3 className="mb-4 text-base font-bold text-primary">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
-        <ChoiceTile title="Sarakstīties ar virtuālo asistentu" icon={MessageSquareMore} note="Atbilde uzreiz · 24/7" onClick={onAssistant} />
-        <ChoiceTile title="Rakstīt VID speciālistam" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim*" onClick={onSpecialist} />
+        <ChoiceTile title="Sarakstīties ar virtuālo asistentu" icon={MessageSquareMore} note="Tūlītējas atbildes visu diennakti" onClick={onAssistant} />
+        <ChoiceTile title="Rakstīt VID speciālistam" icon={FilePlus2} note="Atbilde līdz 10 darba dienām, sarežģītos gadījumos - līdz vienam mēnesim" onClick={onSpecialist} />
       </div>
       {domain === "customs" && onPoints && (
         <Button variant="outline" onClick={onPoints} className="mt-3 h-auto whitespace-normal border-primary text-primary"><Building2 size={18} /> Rakstīt uz muitas kontroles punktu</Button>
       )}
-      <ResponseTimeNote />
     </div>
   );
-}
-
-export function ResponseTimeNote() {
-  return <p className="mt-3 text-xs leading-5 text-muted-foreground">* <a href="https://likumi.lv/ta/id/164501-iesniegumu-likums#p5" target="_blank" rel="noreferrer" className="text-primary underline">Iesniegumu likuma 5. panta trešā un 3.¹ daļa</a>: atbilde parasti sniedzama 10 darbdienu laikā; ja nepieciešama papildu informācija, sadarbība ar citām iestādēm vai apjomīga analīze — viena mēneša laikā. Citām iesniegumu kategorijām var būt cita likumā noteikta kārtība.</p>;
 }
 
 export function ViewSwitch({ onReset }: { onReset: () => void }) {
