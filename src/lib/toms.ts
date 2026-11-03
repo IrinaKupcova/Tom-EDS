@@ -69,6 +69,25 @@ export function needsIdentification(text: string) {
   return true;
 }
 
+/** Lietotājs pats saka, ka grib personalizētu atbildi, kurai vajag EDS verifikāciju. */
+export function wantsEdsVerification(text: string) {
+  return /personaliz|personīg|personisk|verifikācij|verifikacij|identificē|identifice|ielogot|autorizē|autorizacij|saviem datiem|savus datus|savu situācij|maniem datiem|personas dat/i.test(text);
+}
+
+function edsLoginReply(): Msg[] {
+  return [
+    {
+      from: "toms",
+      text: "Lai varētu sameklēt informāciju par Jums iestādes informācijas sistēmās un atbildēt uz Jūsu jautājumu, nepieciešama identifikācija. Šajā prototipā tā un personīgo datu saņemšana tiek demonstrēta.",
+    },
+    {
+      from: "toms",
+      text: "Piesakieties EDS – mūsu saruna turpināsies tieši tur, un Jums nekas nav jāatkārto.",
+      action: "auth",
+    },
+  ];
+}
+
 const VID = "https://www.vid.gov.lv/lv";
 const EDS_LOGIN = "https://eds.vid.gov.lv/login/";
 const DOCS_GUIDE = "https://www.vid.gov.lv/lv/media/1103/download?attachment=";
@@ -158,23 +177,12 @@ function userContext(text: string, history: Msg[] = []) {
 export function publicReply(text: string, history: Msg[] = []): Msg[] {
   const t = text.toLowerCase();
   const context = userContext(text, history);
+  if (wantsEdsVerification(text)) return edsLoginReply();
   const topic = matchComplexTopic(context);
   if (topic) return handoff(dialogue(text, history), context, "topic", topic.title);
   const guide = selfServiceGuide(text, context);
   if (guide) return guide;
-  if (needsIdentification(text)) {
-    return [
-      {
-        from: "toms",
-        text: "Lai varētu sameklēt informāciju par Jums iestādes informācijas sistēmās un atbildēt uz Jūsu jautājumu, nepieciešama identifikācija. Šajā prototipā tā un personīgo datu saņemšana tiek demonstrēta.",
-      },
-      {
-        from: "toms",
-        text: "Piesakieties EDS – mūsu saruna turpināsies tieši tur, un Jums nekas nav jāatkārto.",
-        action: "auth",
-      },
-    ];
-  }
+  if (needsIdentification(text)) return edsLoginReply();
   if (t.includes("darba laik") || t.includes("klientu apkalp"))
     return [
       {
@@ -222,6 +230,7 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
 }
 
 export function gamblingReply(text: string, history: Msg[]): Msg[] {
+  if (wantsEdsVerification(text)) return publicReply(text, history);
   const context = "Azartspēļu un izložu jautājums: " + history.filter((m) => m.from === "user").map((m) => m.text).join("\n");
   if (history.some((m) => m.action === "summary")) return handoff(history, context, "continue");
   const topic = matchComplexTopic(context);

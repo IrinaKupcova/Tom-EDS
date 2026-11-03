@@ -32,10 +32,10 @@
 
   var specialistOffer = "Diemžēl nevaru atbildēt uz šo jautājumu. Piedāvāju sazināties ar speciālistu. Ja vēlaties, varu pārsūtīt jautājumu VID speciālistam. Vai varat zvanīt uz telefona numuru 67120000, vai sazināties citādā veidā: sadaļa Kontakti.";
 
-  function remember(text, reply, handoff) {
+  function remember(text, reply, handoff, auth) {
     dialogue.push("Klients: " + text);
     dialogue.push("Toms: " + reply);
-    return { reply: reply, handoff: handoff };
+    return { reply: reply, handoff: handoff, auth: !!auth };
   }
 
   function acceptHandoff() {
@@ -66,8 +66,8 @@
     if (/grāmatiņ|gramatin/.test(t)) {
       return remember(text, "Šādam pakalpojumam ir veidlapa EDS: “Iesniegums par algas nodokļa grāmatiņas piešķiršanu”. To var atvērt pēc EDS pieslēgšanās, sadaļā Sarakste ar VID.", false);
     }
-    if (/parād|pārmaks|mans |manu |deklarācij/.test(t)) {
-      return remember(text, "Lai apskatītu jūsu datus, vispirms jāpieslēdzas EDS. Šajā demonstrācijā pēc pieslēgšanās var turpināt jautājumu.", false);
+    if (/personaliz|personīg|personisk|verifikācij|verifikacij|identificē|identifice|ielogot|saviem datiem|savus datus|savu situācij|personas dat|parād|pārmaks|mans |manu |deklarācij/.test(t)) {
+      return remember(text, "Lai apskatītu jūsu datus, vispirms jāpieslēdzas EDS. Šajā demonstrācijā pēc pieslēgšanās var turpināt jautājumu.", false, !edsFile());
     }
     if (/darba laik|klientu apkalp/.test(t)) {
       return remember(text, "VID Klientu apkalpošanas centri strādā darba dienās 8:30–16:30. Konsultatīvais tālrunis: 67120000.", false);
@@ -156,6 +156,18 @@
       yes.textContent = "Jā, pārsūtīt VID speciālistam";
       yes.addEventListener("click", acceptHandoff);
       replyBubble.appendChild(yes);
+    }
+    if (result.auth) {
+      var login = document.createElement("button");
+      login.type = "button";
+      login.className = "mt-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground";
+      login.textContent = "Autentificēties EDS";
+      login.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        location.href = "eds/index.html#pieslegties";
+      });
+      replyBubble.appendChild(login);
     }
     reply.appendChild(replyBubble);
     log.appendChild(user);
