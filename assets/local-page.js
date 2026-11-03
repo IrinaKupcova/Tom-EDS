@@ -677,7 +677,8 @@
       "Jautājums": ["Jautājums par deklarācijas iesniegšanu", "Jautājums par nodokļa aprēķinu", "Jautājums par maksājumu", "Jautājums par EDS lietošanu", "Jautājums par termiņu", "Cits jautājums"],
       "Paskaidrojums": ["Paskaidrojums par darījuma būtību", "Paskaidrojums par PVN darījumiem", "Cits paskaidrojums"],
       "Sūdzība": ["Sūdzība par VID pieņemtu lēmumu", "Sūdzība par VID darbinieka rīcību", "Sūdzība par klientu apkalpošanu", "Sūdzība par EDS darbību", "Cita sūdzība"],
-      "Ierosinājums": ["Ierosinājums VID pakalpojuma uzlabošanai", "Ierosinājums par EDS", "Ierosinājums par klientu apkalpošanu", "Cits ierosinājums"]
+      "Ierosinājums": ["Ierosinājums VID pakalpojuma uzlabošanai", "Ierosinājums par EDS", "Ierosinājums par klientu apkalpošanu", "Cits ierosinājums"],
+      "Cits": ["Cits"]
     };
     var themeOptions = Object.keys(themes).map(function (name) { return "<option>" + name + "</option>"; }).join("");
     box.innerHTML =

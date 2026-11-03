@@ -57,6 +57,7 @@ export const documentSubtypes: Record<string, string[]> = {
     "Cits azartspēļu vai izložu jautājums",
   ],
   "Cits dokuments": ["Papildu informācija iepriekšējai vēstulei", "Apliecinoši dokumenti", "Cits dokuments vai ziņa speciālistam"],
+  "Cits": ["Cits"],
 };
 
 const WHERE =
@@ -125,8 +126,8 @@ const structuredForms: StructuredForm[] = [
 /** Vēstules formai. Šeit nav iesnieguma, pilnvaras un pieteikuma, ne arī apakštēmu, kuras EDS jau piedāvā kā strukturētu dokumentu. */
 export function letterThemeOptions(): Record<string, string[]> {
   const structured = new Set(structuredForms.map((item) => item.subtype));
-  const omittedTypes = new Set(["Iesniegums", "Pilnvara", "Pieteikums", "Muitas jautājums", "Azartspēļu un izložu jautājums"]);
-  const keptTypes = new Set(["Jautājums", "Paskaidrojums", "Sūdzība", "Ierosinājums"]);
+  const omittedTypes = new Set(["Iesniegums", "Pilnvara", "Pieteikums", "Muitas jautājums", "Azartspēļu un izložu jautājums", "Cits dokuments"]);
+  const keptTypes = new Set(["Jautājums", "Paskaidrojums", "Sūdzība", "Ierosinājums", "Cits"]);
   return Object.fromEntries(
     Object.entries(documentSubtypes).flatMap(([type, subtypes]) => {
       if (omittedTypes.has(type)) return [];
