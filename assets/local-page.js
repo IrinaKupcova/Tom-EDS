@@ -57,7 +57,7 @@
     for (var i = 0; i < complexTopics.length; i += 1) {
       if (complexTopics[i][1].test(t)) topic = complexTopics[i][0];
     }
-    if (topic) {
+    if (topic || /palīdzīb|palidzib|palīdziet|palidziet|\bpalīdzi\b|\bpalidzi\b|netiek\w* galā|netiek\w* gala|tikt galā|tikt gala/.test(t)) {
       return remember(text, specialistOffer, true);
     }
     if (/iesniegt|iesnieg|veidlap|izziņ/.test(t)) {

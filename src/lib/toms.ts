@@ -74,6 +74,10 @@ export function wantsEdsVerification(text: string) {
   return /personaliz|personīg|personisk|verifikācij|verifikacij|identificē|identifice|ielogot|autorizē|autorizacij|saviem datiem|savus datus|savu situācij|maniem datiem|personas dat/i.test(text);
 }
 
+export function needsHumanHelp(text: string) {
+  return /palīdzīb|palidzib|palīdziet|palidziet|\bpalīdzi\b|\bpalidzi\b|netiek\w* galā|netiek\w* gala|tikt galā|tikt gala/i.test(text);
+}
+
 function edsLoginReply(): Msg[] {
   return [
     {
@@ -178,6 +182,7 @@ export function publicReply(text: string, history: Msg[] = []): Msg[] {
   const t = text.toLowerCase();
   const context = userContext(text, history);
   if (wantsEdsVerification(text)) return edsLoginReply();
+  if (needsHumanHelp(text)) return handoff(dialogue(text, history), context, "topic");
   const topic = matchComplexTopic(context);
   if (topic) return handoff(dialogue(text, history), context, "topic", topic.title);
   const guide = selfServiceGuide(text, context);
@@ -211,6 +216,7 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
   const t = latest.toLowerCase();
   const thread = dialogue(latest, history);
   if (continuingSummary) return handoff(thread, text, "continue");
+  if (needsHumanHelp(latest)) return handoff(thread, text, "topic");
   const topic = matchComplexTopic(`${latest}\n${text}`);
   if (topic) return handoff(thread, text, "topic", topic.title);
   const guide = selfServiceGuide(latest, text);
@@ -231,6 +237,7 @@ export function edsReply(text: string, _turn: number, latest = text, continuingS
 
 export function gamblingReply(text: string, history: Msg[]): Msg[] {
   if (wantsEdsVerification(text)) return publicReply(text, history);
+  if (needsHumanHelp(text)) return handoff(dialogue(text, history), text, "topic");
   const context = "Azartspēļu un izložu jautājums: " + history.filter((m) => m.from === "user").map((m) => m.text).join("\n");
   if (history.some((m) => m.action === "summary")) return handoff(history, context, "continue");
   const topic = matchComplexTopic(context);
