@@ -65,7 +65,7 @@ const WHERE =
 
 /** Norāde pie sarakstes ar speciālistu: strukturētās veidlapas ir kreisajā joslā. */
 export const specialistDocumentsNotice =
-  "Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.";
+  "Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir sadaļā DOKUMENTI.";
 
 /** EDS „Sagatavot dokumentu” grupas no prototipa parauga. */
 export const documentPrepGroups = [

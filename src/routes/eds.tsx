@@ -736,7 +736,7 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
       <p role="note" className="mb-4 mt-3 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">
         <span className="font-bold">Paziņojums. </span>
         {noticeBefore}
-        <button type="button" className="font-bold text-primary underline" onClick={() => setDocumentsOpen(true)}>DOKUMENTI</button>
+        <button type="button" className="mx-1 inline-flex rounded-md bg-primary px-2 py-0.5 align-baseline text-sm font-bold text-primary-foreground" onClick={() => setDocumentsOpen(true)}>DOKUMENTI</button>
         {noticeAfter}
       </p>
       <p className="mb-4 mt-1 text-xs text-muted-foreground">
