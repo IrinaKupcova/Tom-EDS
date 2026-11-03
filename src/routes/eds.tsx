@@ -449,7 +449,8 @@ function EdsPage() {
                   <DocForm initialText={handoffLetter} onSent={(summary) => { const origin = handoffLetter ? "assistant" : "client"; setHandoffLetter(""); submit(summary, origin); }} onCancel={() => { blankSpecialistLetter(); goBack(); }} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
                 </div>
               ) : (
-                <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary px-4 py-8">
+                  <div className="flex h-[min(640px,100%)] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg">
                   <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     <div className="flex items-center gap-3 border-b border-border bg-chat-header px-4 py-3">
                       {cat !== "customs" && cat !== "gambling" && <TomsAvatar size={30} virtualAssistant />}
@@ -486,6 +487,7 @@ function EdsPage() {
                     </div>
                     {cat === "customs" && <div className="mt-3 max-h-48 overflow-auto"><CustomsPoints /></div>}
                   </section>
+                  </div>
                 </div>
               )}
             </div>

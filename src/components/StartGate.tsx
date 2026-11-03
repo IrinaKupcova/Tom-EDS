@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Globe, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,22 +21,18 @@ const ARRIVED_KEY = "vid-start-arrived-v1";
 
 export function StartGate() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(() => {
-    try {
-      if (sessionStorage.getItem(ARRIVED_KEY) === "1") {
-        sessionStorage.removeItem(ARRIVED_KEY);
-        return false;
-      }
-      if (sessionStorage.getItem(START_KEY)) return false;
-    } catch {
-      /* sessionStorage var būt nepieejams */
-    }
-    return true;
-  });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const show = () => setOpen(true);
     window.addEventListener(SHOW_EVENT, show);
+    try {
+      if (sessionStorage.getItem(ARRIVED_KEY) === "1") sessionStorage.removeItem(ARRIVED_KEY);
+      else if (!sessionStorage.getItem(START_KEY)) setOpen(true);
+    } catch {
+      setOpen(true);
+    }
     return () => window.removeEventListener(SHOW_EVENT, show);
   }, []);
 
@@ -45,13 +41,13 @@ export function StartGate() {
   const choose = (view: "vid" | "eds") => {
     try {
       sessionStorage.setItem(START_KEY, view);
-      sessionStorage.setItem(ARRIVED_KEY, "1");
+      sessionStorage.removeItem(ARRIVED_KEY);
     } catch {
       /* sessionStorage var būt nepieejams */
     }
     setOpen(false);
-    if (view === "eds") navigate({ to: "/eds", search: {} });
-    else navigate({ to: "/" });
+    const target = view === "eds" ? "/eds" : "/";
+    if (pathname !== target) navigate({ to: target, search: {} });
   };
 
   return (
