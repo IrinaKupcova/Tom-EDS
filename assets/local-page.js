@@ -801,8 +801,8 @@
       openChat(domain);
       return;
     }
-    if (text.includes("Nodokļu joma")) showDomain("chat");
-    else if (text.includes("Muitas joma")) showDomain("customs");
-    else if (text.includes("Azartspēļu un izložu joma")) showDomain("gambling");
+    if (text.includes("Nodokļu jautājumi")) showDomain("chat");
+    else if (text.includes("Muitas jautājumi")) showDomain("customs");
+    else if (text.includes("Azartspēļu un izložu jautājumi")) showDomain("gambling");
   });
 })();

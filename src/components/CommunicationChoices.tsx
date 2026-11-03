@@ -6,9 +6,9 @@ export type CommunicationCategory = "chat" | "doc" | "customs" | "history" | "ga
 export type CommunicationDomain = "tax" | "customs" | "gambling";
 
 const domains: { id: CommunicationDomain; title: string; icon: LucideIcon }[] = [
-  { id: "tax", title: "Nodokļu joma", icon: MessageSquareMore },
-  { id: "customs", title: "Muitas joma", icon: Box },
-  { id: "gambling", title: "Azartspēļu un izložu joma", icon: Dices },
+  { id: "tax", title: "Nodokļu jautājumi", icon: MessageSquareMore },
+  { id: "customs", title: "Muitas jautājumi", icon: Box },
+  { id: "gambling", title: "Azartspēļu un izložu jautājumi", icon: Dices },
 ];
 
 function ChoiceTile({ title, desc, icon: Icon, note, onClick }: { title: string; desc?: string; icon: LucideIcon; note?: string; onClick: () => void }) {
