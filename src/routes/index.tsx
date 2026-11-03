@@ -394,7 +394,7 @@ function VidPage() {
                 <div className="mt-6"><Button variant="outline" onClick={backPanel}><ArrowLeft size={16} /> Atpakaļ</Button></div>
               </section>
             ) : panel.step === "menu" ? (
-              <div className="min-h-0 flex-1 overflow-auto px-4 py-6 sm:px-6">
+              <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-auto px-4 py-6">
                 <DomainActions domain={panel.domain} onAssistant={() => startAssistant(panel.domain)} onSpecialist={() => writeSpecialist(panel.domain)} onPoints={panel.domain === "customs" ? () => setPanel({ kind: "domain", domain: "customs", step: "points" }) : undefined} />
               </div>
             ) : panel.step === "points" ? (
