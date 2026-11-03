@@ -643,9 +643,7 @@
       "Jautājums": ["Jautājums par deklarācijas iesniegšanu", "Jautājums par nodokļa aprēķinu", "Jautājums par maksājumu", "Jautājums par EDS lietošanu", "Jautājums par termiņu", "Cits jautājums"],
       "Paskaidrojums": ["Paskaidrojums par darījuma būtību", "Paskaidrojums par PVN darījumiem", "Cits paskaidrojums"],
       "Sūdzība": ["Sūdzība par VID pieņemtu lēmumu", "Sūdzība par VID darbinieka rīcību", "Sūdzība par klientu apkalpošanu", "Sūdzība par EDS darbību", "Cita sūdzība"],
-      "Ierosinājums": ["Ierosinājums VID pakalpojuma uzlabošanai", "Ierosinājums par EDS", "Ierosinājums par klientu apkalpošanu", "Cits ierosinājums"],
-      "Muitas jautājums": ["Par importa PVN un muitas nodokli", "Cits muitas jautājums"],
-      "Azartspēļu un izložu jautājums": ["Par interaktīvo azartspēļu organizēšanu", "Par azartspēļu automātiem", "Cits azartspēļu vai izložu jautājums"]
+      "Ierosinājums": ["Ierosinājums VID pakalpojuma uzlabošanai", "Ierosinājums par EDS", "Ierosinājums par klientu apkalpošanu", "Cits ierosinājums"]
     };
     var themeOptions = Object.keys(themes).map(function (name) { return "<option>" + name + "</option>"; }).join("");
     box.innerHTML =
@@ -670,10 +668,6 @@
       subtypeSelect.innerHTML = items.length ? '<option value="">— izvēlieties —</option>' + items.map(function (name) { return "<option>" + name + "</option>"; }).join("") : '<option value="">— vispirms izvēlieties tēmu —</option>';
       subtypeSelect.disabled = !items.length;
     });
-    if (recipient) {
-      themeSelect.value = "Muitas jautājums";
-      themeSelect.dispatchEvent(new Event("change"));
-    }
     var letterOrigin = "client";
     if (draft && draft.teksts) {
       letterOrigin = "assistant";

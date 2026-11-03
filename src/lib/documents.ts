@@ -105,7 +105,7 @@ const structuredForms: StructuredForm[] = [
 /** Vēstules formai. Šeit nav iesnieguma, pilnvaras un pieteikuma, ne arī apakštēmu, kuras EDS jau piedāvā kā strukturētu dokumentu. */
 export function letterThemeOptions(): Record<string, string[]> {
   const structured = new Set(structuredForms.map((item) => item.subtype));
-  const omittedTypes = new Set(["Iesniegums", "Pilnvara", "Pieteikums"]);
+  const omittedTypes = new Set(["Iesniegums", "Pilnvara", "Pieteikums", "Muitas jautājums", "Azartspēļu un izložu jautājums"]);
   const keptTypes = new Set(["Jautājums", "Paskaidrojums", "Sūdzība", "Ierosinājums"]);
   return Object.fromEntries(
     Object.entries(documentSubtypes).flatMap(([type, subtypes]) => {

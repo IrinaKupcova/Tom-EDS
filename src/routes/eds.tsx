@@ -713,7 +713,8 @@ function SentResult({ summary, reply, actions, onHistory }: { summary: Summary; 
 }
 
 function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }: { onSent: (s: Summary) => void; onCancel: () => void; recipient?: string; documentType?: string; initialText?: string }) {
-  const [type, setType] = useState(documentType ?? (recipient ? "Muitas jautājums" : ""));
+  const themes = letterThemeOptions();
+  const [type, setType] = useState(documentType && themes[documentType] ? documentType : "");
   const [subtype, setSubtype] = useState("");
   const [text, setText] = useState(initialText);
   const [error, setError] = useState("");
@@ -750,7 +751,7 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
           className="input-vid mt-1 h-9 w-full"
         >
           <option value="">— izvēlieties —</option>
-          {Object.keys(letterThemeOptions()).map((s) => (
+          {Object.keys(themes).map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
@@ -759,7 +760,7 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
         Apakštēma<span className="text-destructive">*</span>
         <select required value={subtype} onChange={(e) => setSubtype(e.target.value)} className="input-vid mt-1 h-9 w-full">
           <option value="">— izvēlieties —</option>
-          {(letterThemeOptions()[type] ?? []).map((s) => <option key={s}>{s}</option>)}
+          {(themes[type] ?? []).map((s) => <option key={s}>{s}</option>)}
         </select>
       </label>}
       <label className="mb-5 block text-sm text-primary">
