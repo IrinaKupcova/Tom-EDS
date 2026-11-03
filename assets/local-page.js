@@ -616,6 +616,46 @@
     });
   }
 
+  function showDocumentGroups(box) {
+    if (box.querySelector("#local-documents")) return;
+    var groups = ["Akcīzes nodokļa dokumenti", "Akcīzes preču aprites dokumenti", "Akcīzes preču atļauju un izziņu iesniegumi", "Akcīzes preču licenču un sertifikātu iesniegumi", "Akcīzes preču marķēšanas dokumenti", "Akcīzes preču nodrošinājumu iesniegumi", "Citi", "Darījumu apliecinošie dokumenti", "Gada pārskati", "Iedzīvotāju ienākuma nodokļa dokumenti", "Iesniegumi", "Informatīvās deklarācijas un pārskati", "Informācija Valsts ieņēmumu dienestam", "Informācija VID Muitas pārvaldei", "Mikrouzņēmumu nodokļa dokumenti", "Nodokļu maksātāju reģistrācijas un datu izmaiņu veidlapas"];
+    var panel = document.createElement("div");
+    panel.id = "local-documents";
+    panel.className = "absolute inset-0 z-10 overflow-auto bg-background";
+    var tabs = ["Mans saraksts", "Pēc dokumentu grupas", "Visi dokumenti"];
+    panel.innerHTML =
+      '<div class="border-b border-border bg-card px-4 py-3"><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button></div>' +
+      '<h2 class="bg-primary px-4 py-3 text-lg font-bold uppercase tracking-wide text-primary-foreground">Sagatavot dokumentu</h2>' +
+      '<div class="px-4 py-4"><input data-filter class="input-vid h-9 w-full" placeholder="Atlasīt pēc nosaukuma fragmenta" aria-label="Atlasīt pēc nosaukuma fragmenta">' +
+      '<div class="mt-4 flex flex-wrap border-b border-border" role="tablist">' + tabs.map(function (name, index) {
+        return '<button type="button" data-tab="' + name + '" class="' + (index === 0 ? "-mb-px border border-b-background bg-card px-3 py-2 text-sm font-bold text-primary underline" : "px-3 py-2 text-sm text-primary underline") + '">' + name + "</button>";
+      }).join("") + "</div>" +
+      '<ul class="border-t border-border" data-groups>' + groups.map(function (name) {
+        return '<li class="border-b border-border hover:bg-secondary" data-name="' + name + '"><span class="block px-2 py-2.5 text-sm text-primary underline">' + name + "</span></li>";
+      }).join("") + "</ul>" +
+      '<p data-empty hidden class="mt-3 text-sm text-muted-foreground">Nav dokumentu ar šādu nosaukuma fragmentu.</p></div>';
+    box.appendChild(panel);
+    panel.querySelector("[data-back]").addEventListener("click", function () { panel.remove(); });
+    panel.querySelectorAll("[data-tab]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        panel.querySelectorAll("[data-tab]").forEach(function (item) {
+          var active = item === button;
+          item.className = active ? "-mb-px border border-b-background bg-card px-3 py-2 text-sm font-bold text-primary underline" : "px-3 py-2 text-sm text-primary underline";
+        });
+      });
+    });
+    panel.querySelector("[data-filter]").addEventListener("input", function (event) {
+      var fragment = event.target.value.trim().toLocaleLowerCase("lv");
+      var visible = 0;
+      panel.querySelectorAll("[data-name]").forEach(function (row) {
+        var show = row.getAttribute("data-name").toLocaleLowerCase("lv").indexOf(fragment) !== -1;
+        row.hidden = !show;
+        if (show) visible += 1;
+      });
+      panel.querySelector("[data-empty]").hidden = visible > 0;
+    });
+  }
+
   function showForm() {
     var box = document.getElementById("local-auth");
     if (!box) return;
@@ -631,7 +671,7 @@
     box.innerHTML =
       '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">' + (recipient ? "Rakstīt: " + recipient : "Rakstīt VID speciālistam") + '</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
       '<form class="mx-auto w-full max-w-3xl px-4 py-6">' +
-      '<p role="note" class="mb-4 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6"><strong>Paziņojums.</strong> Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.</p>' +
+      '<p role="note" class="mb-4 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6"><strong>Paziņojums.</strong> Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā <button type="button" data-documents class="font-bold text-primary underline">DOKUMENTI</button>.</p>' +
       (recipient ? '<p class="mb-4 text-sm leading-6">Adresāts: ' + recipient + ".</p>" : "") +
       (representedName ? '<p class="mb-4 text-sm leading-6">Pārstāvat: ' + representedName + ".</p>" : "") +
       '<label class="mb-3 block text-sm text-primary">Tēma<select required data-tema class="input-vid mt-1 h-9 w-full"><option value="">— izvēlieties —</option>' + themeOptions + '</select></label>' +
@@ -656,6 +696,7 @@
       box.querySelector("[data-teksts]").value = draft.teksts;
       sessionStorage.removeItem("vid-eds-specialist-draft");
     }
+    box.querySelector("[data-documents]").addEventListener("click", function () { showDocumentGroups(box); });
     box.querySelectorAll("[data-close]").forEach(function (button) {
       button.addEventListener("click", function () {
         box.remove();

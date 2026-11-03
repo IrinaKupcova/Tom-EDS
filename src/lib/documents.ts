@@ -66,6 +66,26 @@ const WHERE =
 export const specialistDocumentsNotice =
   "Daudzas strukturētās veidlapas iesniedzamajiem dokumentiem ir kreisajā pusē sadaļā DOKUMENTI.";
 
+/** EDS „Sagatavot dokumentu” grupas no prototipa parauga. */
+export const documentPrepGroups = [
+  "Akcīzes nodokļa dokumenti",
+  "Akcīzes preču aprites dokumenti",
+  "Akcīzes preču atļauju un izziņu iesniegumi",
+  "Akcīzes preču licenču un sertifikātu iesniegumi",
+  "Akcīzes preču marķēšanas dokumenti",
+  "Akcīzes preču nodrošinājumu iesniegumi",
+  "Citi",
+  "Darījumu apliecinošie dokumenti",
+  "Gada pārskati",
+  "Iedzīvotāju ienākuma nodokļa dokumenti",
+  "Iesniegumi",
+  "Informatīvās deklarācijas un pārskati",
+  "Informācija Valsts ieņēmumu dienestam",
+  "Informācija VID Muitas pārvaldei",
+  "Mikrouzņēmumu nodokļa dokumenti",
+  "Nodokļu maksātāju reģistrācijas un datu izmaiņu veidlapas",
+];
+
 type StructuredForm = { type: string; subtype: string; test: (text: string) => boolean };
 
 const has = (text: string, pattern: RegExp) => pattern.test(text);

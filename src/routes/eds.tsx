@@ -7,6 +7,7 @@ import { CustomsPoints } from "@/components/CustomsPoints";
 import { askAssistant, completeUnclearReply, usableAssistantAnswer, type AssistantDomain } from "@/lib/ai.functions";
 import { canCancelMessage, clearSpecialistDraft, ensureDemoHistory, keptByRetention, loadSpecialistDraft } from "@/lib/correspondence";
 import { documentSubtypes, letterThemeOptions, matchStructuredForm, specialistDocumentsNotice, submittedFormNotice } from "@/lib/documents";
+import { DocumentPrepList } from "@/components/DocumentPrepList";
 import { gamblingReply, type Msg } from "@/lib/toms";
 import { TomsAvatar, TomsChat, useScriptedChat } from "@/components/TomsChat";
 import {
@@ -711,7 +712,11 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
   const [subtype, setSubtype] = useState("");
   const [text, setText] = useState(initialText);
   const [error, setError] = useState("");
+  const [documentsOpen, setDocumentsOpen] = useState(false);
+  const [noticeBefore, noticeAfter] = specialistDocumentsNotice.split("DOKUMENTI");
   return (
+    <>
+    {documentsOpen && <DocumentPrepList onBack={() => setDocumentsOpen(false)} />}
     <form
       onSubmit={(e) => {
         e.preventDefault();
@@ -730,7 +735,9 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
       </h3>
       <p role="note" className="mb-4 mt-3 rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6">
         <span className="font-bold">Paziņojums. </span>
-        {specialistDocumentsNotice}
+        {noticeBefore}
+        <button type="button" className="font-bold text-primary underline" onClick={() => setDocumentsOpen(true)}>DOKUMENTI</button>
+        {noticeAfter}
       </p>
       <p className="mb-4 mt-1 text-xs text-muted-foreground">
         {recipient ? `Adresāts: ${recipient}. ` : ""}Aizpildiet paskaidrojumu un, ja nepieciešams, pievienojiet dokumentu.
@@ -816,5 +823,6 @@ function DocForm({ onSent, onCancel, recipient, documentType, initialText = "" }
         darbinieki.
       </p>
     </form>
+    </>
   );
 }
