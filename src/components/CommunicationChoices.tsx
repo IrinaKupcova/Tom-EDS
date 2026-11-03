@@ -42,12 +42,9 @@ export function CommunicationChoices({
       </div>
       {!publicSite && onHistory && (
         <div className="mt-3">
-          <ChoiceTile title="Sarakstes vēsture" icon={History} desc="Šeit ir nelasītās, saņemtās, nosūtītās un sagatavotās ziņas, kā arī sarunas ar asistentu." onClick={onHistory} />
+          <ChoiceTile title="Sarakstes vēstules" icon={History} desc="Saņemtās, nosūtītās un sagatavotās ziņas, un sarunas ar VID virtuālo asistentu." onClick={onHistory} />
         </div>
       )}
-      {!publicSite && <p className="mt-2 text-[10px] text-muted-foreground">
-        Saziņu nodokļu un muitas jautājumos veic virtuālais asistents. Sarežģītības kritēriji vēl tiks definēti.
-      </p>}
     </>
   );
 }

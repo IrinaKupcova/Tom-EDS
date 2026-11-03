@@ -250,12 +250,12 @@
     Array.prototype.forEach.call(document.querySelectorAll("button"), function (button) {
       if (button.closest("#local-history, #local-domain, #local-auth, #local-service")) return;
       var text = button.textContent.replace(/\s+/g, " ").trim();
-      if (!/^Sarakstes vēsture\b/.test(text)) return;
-      if (text === "Sarakstes vēsture") {
+      if (!text.startsWith("Sarakstes vēsture") && !text.startsWith("Sarakstes vēstules")) return;
+      if (text === "Sarakstes vēsture" || text === "Sarakstes vēstules") {
         button.style.cssText = "display:flex;flex-direction:column;align-items:flex-start;width:100%;max-width:720px;height:auto;margin-top:12px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--card);text-align:left;font-size:14px;font-weight:700;color:var(--primary);white-space:normal;";
         var hint = document.createElement("span");
         hint.style.cssText = "display:block;margin-top:4px;font-size:12px;font-weight:400;line-height:1.4;color:var(--muted-foreground);";
-        hint.textContent = "Šeit ir nelasītās, saņemtās, nosūtītās un sagatavotās ziņas, kā arī sarunas ar asistentu.";
+        hint.textContent = "Saņemtās, nosūtītās un sagatavotās ziņas, un sarunas ar VID virtuālo asistentu.";
         button.appendChild(hint);
       }
       button.addEventListener("click", function (event) {
