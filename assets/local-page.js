@@ -257,7 +257,7 @@
     var nav = document.querySelector('[aria-label="Sarakstes sadaļas"]');
     if (nav) nav.hidden = true;
     var style = document.createElement("style");
-    style.textContent = ".eds-mail,.eds-mail-active{height:auto;min-height:36px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;font-weight:700;line-height:1.3;text-align:left}.eds-mail-active{border-color:var(--primary);background:var(--secondary);color:var(--primary)}#local-history{padding:16px 22px 32px}#local-history h2{margin-bottom:8px;font-size:16px;font-weight:700;color:var(--primary)}#local-history .history-group{margin:0 0 20px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--card)}#local-history .history-group>button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:0;padding:12px 16px;border:0;background:var(--secondary);font:inherit;font-size:14px;font-weight:700;color:var(--primary);text-align:left;cursor:pointer}#local-history .history-group.open>button{border-bottom:1px solid var(--border)}#local-history .history-group>button::after{content:\"▾\";font-size:12px}#local-history .history-group.open>button::after{content:\"▴\"}#local-history .history-count{border-radius:999px;background:var(--primary);padding:2px 8px;font-size:12px;color:var(--primary-foreground)}#local-history article{margin:12px 16px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--background)}#local-history .history-empty{margin:0;padding:16px;font-size:14px;color:var(--muted-foreground)}";
+    style.textContent = ".eds-mail,.eds-mail-active{height:auto;min-height:36px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;font-weight:700;line-height:1.3;text-align:left}.eds-mail-active{border-color:var(--primary);background:var(--secondary);color:var(--primary)}#local-history{padding:16px 22px 32px}#local-history h2{margin-bottom:8px;font-size:16px;font-weight:700;color:var(--primary)}#local-history .history-group{margin:0 0 20px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--card)}#local-history .history-group>button{display:flex;align-items:center;gap:12px;flex-wrap:nowrap;width:100%;margin:0;padding:12px 16px;border:0;background:var(--secondary);font:inherit;font-size:14px;font-weight:700;color:var(--primary);text-align:left;cursor:pointer}#local-history .history-title{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#local-history .history-count{flex:none;margin-left:auto;white-space:nowrap}#local-history .history-group.open>button{border-bottom:1px solid var(--border)}#local-history .history-group>button::after{content:\"▾\";font-size:12px}#local-history .history-group.open>button::after{content:\"▴\"}#local-history .history-count{border-radius:999px;background:var(--primary);padding:2px 8px;font-size:12px;color:var(--primary-foreground)}#local-history article{margin:12px 16px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--background)}#local-history .history-empty{margin:0;padding:16px;font-size:14px;color:var(--muted-foreground)}";
     document.head.appendChild(style);
     Array.prototype.forEach.call(document.querySelectorAll("button"), function (button) {
       if (button.closest("#local-history, #local-domain, #local-auth, #local-service")) return;
@@ -421,7 +421,10 @@
       var heading = document.createElement("button");
       heading.type = "button";
       heading.setAttribute("aria-expanded", "false");
-      heading.appendChild(document.createTextNode(title));
+      var label = document.createElement("span");
+      label.className = "history-title";
+      label.textContent = title;
+      heading.appendChild(label);
       var count = document.createElement("span");
       count.className = "history-count";
       count.textContent = String(rows.length);

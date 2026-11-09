@@ -538,9 +538,9 @@ function HistoryGroup({ title, count, children }: { title: string; count: number
   return (
     <section className="mb-6 overflow-hidden rounded-lg border border-border bg-card">
       <h4>
-        <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex w-full items-center justify-between gap-3 bg-secondary px-4 py-3 text-left text-sm font-bold text-primary">
-          {title}
-          <span className="flex shrink-0 items-center gap-2">
+        <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-3 bg-secondary px-4 py-3 text-left text-sm font-bold text-primary">
+          <span className="min-w-0 flex-1 truncate">{title}</span>
+          <span className="flex shrink-0 items-center gap-2 whitespace-nowrap">
             <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{count}</span>
             <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} />
           </span>
