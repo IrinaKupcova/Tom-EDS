@@ -257,7 +257,7 @@
     var nav = document.querySelector('[aria-label="Sarakstes sadaļas"]');
     if (nav) nav.hidden = true;
     var style = document.createElement("style");
-    style.textContent = ".eds-mail,.eds-mail-active{height:auto;min-height:36px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;font-weight:700;line-height:1.3;text-align:left}.eds-mail-active{border-color:var(--primary);background:var(--secondary);color:var(--primary)}#local-history{padding:16px 22px 32px}#local-history h2{margin-bottom:8px;font-size:16px;font-weight:700;color:var(--primary)}#local-history .history-group{margin:0 0 20px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--card)}#local-history .history-group>h3{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--secondary);font-size:14px;font-weight:700;color:var(--primary)}#local-history .history-count{border-radius:999px;background:var(--primary);padding:2px 8px;font-size:12px;color:var(--primary-foreground)}#local-history article{margin:12px 16px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--background)}#local-history .history-empty{margin:0;padding:16px;font-size:14px;color:var(--muted-foreground)}";
+    style.textContent = ".eds-mail,.eds-mail-active{height:auto;min-height:36px;margin:0 8px 8px 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;font-weight:700;line-height:1.3;text-align:left}.eds-mail-active{border-color:var(--primary);background:var(--secondary);color:var(--primary)}#local-history{padding:16px 22px 32px}#local-history h2{margin-bottom:8px;font-size:16px;font-weight:700;color:var(--primary)}#local-history .history-group{margin:0 0 20px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--card)}#local-history .history-group>button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:0;padding:12px 16px;border:0;background:var(--secondary);font:inherit;font-size:14px;font-weight:700;color:var(--primary);text-align:left;cursor:pointer}#local-history .history-group.open>button{border-bottom:1px solid var(--border)}#local-history .history-group>button::after{content:\"▾\";font-size:12px}#local-history .history-group.open>button::after{content:\"▴\"}#local-history .history-count{border-radius:999px;background:var(--primary);padding:2px 8px;font-size:12px;color:var(--primary-foreground)}#local-history article{margin:12px 16px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--background)}#local-history .history-empty{margin:0;padding:16px;font-size:14px;color:var(--muted-foreground)}";
     document.head.appendChild(style);
     Array.prototype.forEach.call(document.querySelectorAll("button"), function (button) {
       if (button.closest("#local-history, #local-domain, #local-auth, #local-service")) return;
@@ -418,19 +418,29 @@
     function renderGroup(title, rows, renderRow) {
       var group = document.createElement("section");
       group.className = "history-group";
-      var heading = document.createElement("h3");
+      var heading = document.createElement("button");
+      heading.type = "button";
+      heading.setAttribute("aria-expanded", "false");
       heading.appendChild(document.createTextNode(title));
       var count = document.createElement("span");
       count.className = "history-count";
       count.textContent = String(rows.length);
       heading.appendChild(count);
-      group.appendChild(heading);
+      var body = document.createElement("div");
+      body.hidden = true;
       if (!rows.length) {
         var empty = document.createElement("p");
         empty.className = "history-empty";
         empty.textContent = "Šeit vēl nav ierakstu.";
-        group.appendChild(empty);
-      } else rows.forEach(function (row) { group.appendChild(renderRow(row)); });
+        body.appendChild(empty);
+      } else rows.forEach(function (row) { body.appendChild(renderRow(row)); });
+      heading.addEventListener("click", function () {
+        body.hidden = !body.hidden;
+        heading.setAttribute("aria-expanded", body.hidden ? "false" : "true");
+        group.classList.toggle("open", !body.hidden);
+      });
+      group.appendChild(heading);
+      group.appendChild(body);
       box.appendChild(group);
     }
     function chatArticle(row) {

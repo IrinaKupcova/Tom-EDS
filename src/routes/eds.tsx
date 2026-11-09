@@ -534,15 +534,19 @@ function CancelStatus({ row, onCancel }: { row: { id: string; date?: string | un
 }
 
 function HistoryGroup({ title, count, children }: { title: string; count: number; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
     <section className="mb-6 overflow-hidden rounded-lg border border-border bg-card">
-      <h4 className="flex items-center justify-between gap-3 border-b border-border bg-secondary px-4 py-3 text-sm font-bold text-primary">
-        {title}
-        <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{count}</span>
+      <h4>
+        <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex w-full items-center justify-between gap-3 bg-secondary px-4 py-3 text-left text-sm font-bold text-primary">
+          {title}
+          <span className="flex shrink-0 items-center gap-2">
+            <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{count}</span>
+            <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+          </span>
+        </button>
       </h4>
-      <div className="space-y-3 p-4">
-        {count === 0 ? <p className="text-sm text-muted-foreground">Šeit vēl nav ierakstu.</p> : children}
-      </div>
+      {open && <div className="space-y-3 border-t border-border p-4">{count === 0 ? <p className="text-sm text-muted-foreground">Šeit vēl nav ierakstu.</p> : children}</div>}
     </section>
   );
 }
