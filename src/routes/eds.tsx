@@ -454,7 +454,7 @@ function EdsPage() {
                       <TomsAvatar size={36} />
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-bold">{cat === "chat" ? "Toms" : "Virtuālais asistents"}</h3>
-                        <p className="text-xs">{cat === "customs" ? "VID virtuālais asistents · muita" : cat === "gambling" ? "VID virtuālais asistents · azartspēles" : "VID virtuālais asistents"}</p>
+                        <p className="text-xs">{cat === "customs" ? "VID virtuālais asistents · muita" : cat === "gambling" ? "VID virtuālais asistents · azartspēles" : "VID virtuālais asistents · nodokļi"}</p>
                       </div>
                     </div>
                     <TomsChat
