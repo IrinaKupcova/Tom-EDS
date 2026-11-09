@@ -42,7 +42,7 @@ export function CommunicationChoices({
       </div>
       {!publicSite && onHistory && (
         <div className="mt-3">
-          <ChoiceTile title="Sarakstes vēstules" icon={History} desc="Saņemtās, nosūtītās un sagatavotās ziņas, un sarunas ar VID virtuālo asistentu." onClick={onHistory} />
+          <ChoiceTile title="Sarakstes vēsture" icon={History} desc="Saņemtās, nosūtītās un sagatavotās ziņas, un sarunas ar VID virtuālo asistentu." onClick={onHistory} />
         </div>
       )}
     </>
