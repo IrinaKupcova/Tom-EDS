@@ -91,7 +91,7 @@
     if (!panel) panel = buildChat();
     panel.hidden = false;
     panel.querySelector("[data-title]").textContent = next === "chat" ? "Toms" : "Virtuālais asistents";
-    panel.querySelector("[data-subtitle]").textContent = next === "customs" ? "VID virtuālais asistents · muita" : next === "gambling" ? "VID virtuālais asistents · azartspēles" : "VID virtuālais asistents · nodokļi";
+    panel.querySelector("[data-subtitle]").textContent = next === "customs" ? "VID virtuālais asistents · muitas jautājumi" : next === "gambling" ? "VID virtuālais asistents · azartspēļu un izložu jautājumi" : "VID virtuālais asistents · nodokļu jautājumi";
     renderGreeting(panel.querySelector("[data-log]"), next);
   }
 
@@ -182,7 +182,7 @@
       '<style>.local-chat-wrap{display:flex;min-height:0;flex:1;justify-content:center;overflow:auto;padding:32px 16px}.local-chat-card{display:flex;width:min(440px,100%);height:min(640px,100%);flex-direction:column;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--card);box-shadow:0 8px 24px oklch(0.2 0.04 260 / 0.16)}.local-chat-avatar{width:36px;height:36px;border-radius:999px;object-fit:cover}.local-chat-mini{width:24px;height:24px;border-radius:999px;object-fit:cover}</style>' +
       '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Sarakste</h2><div class="flex gap-2"><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div></div>' +
       '<div class="local-chat-wrap"><section class="local-chat-card">' +
-      '<div class="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground"><img alt="" class="local-chat-avatar" src="' + portraitSrc() + '"><div><h3 data-title class="text-sm font-bold">Toms</h3><p data-subtitle class="text-xs">VID virtuālais asistents · nodokļi</p></div></div>' +
+      '<div class="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground"><img alt="" class="local-chat-avatar" src="' + portraitSrc() + '"><div><h3 data-title class="text-sm font-bold">Toms</h3><p data-subtitle class="text-xs">VID virtuālais asistents · nodokļu jautājumi</p></div></div>' +
       '<div data-log class="min-h-0 flex-1 overflow-y-auto bg-chat-surface p-4 text-sm"></div>' +
       '<form class="flex gap-2 border-t border-border bg-card p-3"><input data-input class="input-vid min-w-0 flex-1" aria-label="Jautājums" placeholder="Rakstiet šeit…"><button type="submit" class="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground">Sūtīt</button></form></section></div>';
     document.body.appendChild(el);
@@ -776,7 +776,7 @@
       box.className = "fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background";
       document.body.appendChild(box);
     }
-    var titles = { chat: "Nodokļu joma", customs: "Muitas joma", gambling: "Azartspēļu un izložu joma" };
+    var titles = { chat: "Nodokļu jautājumi", customs: "Muitas jautājumi", gambling: "Azartspēļu un izložu jautājumi" };
     box.hidden = false;
     box.innerHTML =
       '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">' + titles[next] + '</h2><div class="flex gap-2"><button type="button" data-back class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Atpakaļ</button><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div></div>' +

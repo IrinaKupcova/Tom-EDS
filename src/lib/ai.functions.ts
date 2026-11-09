@@ -10,7 +10,7 @@ Nekad neizdomā konkrētas personas datus, parādus, pārmaksas vai deklarācija
 Parastu vēstuli (kā iesniegt, kur izlasīt, kā rīkoties) atbildi pats un iedod saites uz vid.gov.lv vai EDS. Vispirms ved uz pašapkalpošanos: EDS kreisā josla Dokumenti → Sagatavot dokumentu → No veidlapas. Neiesaki vēstuli speciālistam, ja darbību var izdarīt ar veidlapu vai izziņu.
 Sarežģītību izvērtē tu pats. Klienta vārds “sarežģīts” nav kritērijs. Sarežģītās tēmas: ${complexTopicTitles.join("; ")}.
 Ja vari dot viennozīmīgu atbildi, atbildi pats. Ja viennozīmīgas atbildes nav, atbildes pirmajā rindā ieraksti tieši NAV_VIENNOZIMIGAS un pēc tam vienu teikumu, kāpēc.
-Ja jautājums ir ārpus pašreizējās jomas, pieklājīgi novirzi atpakaļ uz to.`;
+Ja jautājums ir ārpus pašreizējiem jautājumiem, pieklājīgi novirzi atpakaļ uz tiem.`;
 
 export type AssistantDomain = "tax" | "customs" | "gambling";
 
@@ -52,7 +52,7 @@ export const askAssistant = createServerFn({ method: "POST" })
         store: false,
         reasoning: { effort: "low" },
         tools: [{ type: "web_search" }],
-        instructions: `${INSTRUCTIONS}\nPašreizējā joma: ${data.domain === "customs" ? "muita" : data.domain === "gambling" ? "azartspēles un izlozes" : "nodokļi"}.`,
+        instructions: `${INSTRUCTIONS}\nPašreizējie jautājumi: ${data.domain === "customs" ? "muitas jautājumi" : data.domain === "gambling" ? "azartspēļu un izložu jautājumi" : "nodokļu jautājumi"}.`,
         input: data.history,
       }),
     });

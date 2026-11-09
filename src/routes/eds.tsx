@@ -263,11 +263,11 @@ function EdsPage() {
     : sent
       ? "Ziņa nosūtīta"
       : cat === "tax-menu"
-        ? "Nodokļu joma"
+        ? "Nodokļu jautājumi"
         : cat === "customs-menu"
-          ? "Muitas joma"
+          ? "Muitas jautājumi"
           : cat === "gambling-menu"
-            ? "Azartspēļu un izložu joma"
+            ? "Azartspēļu un izložu jautājumi"
       : cat === "doc" || cat === "gambling-doc"
         ? "Rakstīt VID speciālistam"
         : cat === "history"
@@ -276,7 +276,7 @@ function EdsPage() {
             ? "Saziņa par muitas jautājumiem"
             : cat === "gambling"
               ? "Saziņa par azartspēļu un izložu jautājumiem"
-              : "Saziņa ar VID par nodokļu jomas jautājumiem";
+              : "Saziņa ar VID par nodokļu jautājumiem";
   return (
     <div className="eds-shell flex min-h-screen bg-background pt-12">
       <ViewSwitch onReset={reset} />
@@ -444,7 +444,7 @@ function EdsPage() {
                 </div>
               ) : cat === "doc" || cat === "gambling-doc" ? (
                 <div className="mx-auto max-w-3xl px-4 py-6">
-                  <DocForm initialText={handoffLetter} onSent={(summary) => { const origin = handoffLetter ? "assistant" : "client"; setHandoffLetter(""); submit(summary, origin); }} onCancel={() => { blankSpecialistLetter(); goBack(); }} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jomas speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
+                  <DocForm initialText={handoffLetter} onSent={(summary) => { const origin = handoffLetter ? "assistant" : "client"; setHandoffLetter(""); submit(summary, origin); }} onCancel={() => { blankSpecialistLetter(); goBack(); }} {...(point ? { recipient: point } : cat === "gambling-doc" ? { recipient: "VID azartspēļu un izložu jautājumu speciālists", documentType: "Azartspēļu un izložu jautājums" } : { documentType: formPreset === undefined ? document : formPreset ?? undefined })} />
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary px-4 py-8">
@@ -454,7 +454,7 @@ function EdsPage() {
                       <TomsAvatar size={36} />
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-bold">{cat === "chat" ? "Toms" : "Virtuālais asistents"}</h3>
-                        <p className="text-xs">{cat === "customs" ? "VID virtuālais asistents · muita" : cat === "gambling" ? "VID virtuālais asistents · azartspēles" : "VID virtuālais asistents · nodokļi"}</p>
+                        <p className="text-xs">{cat === "customs" ? "VID virtuālais asistents · muitas jautājumi" : cat === "gambling" ? "VID virtuālais asistents · azartspēļu un izložu jautājumi" : "VID virtuālais asistents · nodokļu jautājumi"}</p>
                       </div>
                     </div>
                     <TomsChat

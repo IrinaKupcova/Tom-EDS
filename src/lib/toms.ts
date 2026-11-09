@@ -24,7 +24,7 @@ const PERSONAL_WORDS = ["mans", "manu", "man ", "manai", "manā", "mana"];
 
 export function detectTopic(text: string): Summary {
   const t = text.toLowerCase();
-  if (/(azart|izloz|izlož|loterij)/.test(t)) return { kategorija: "Azartspēļu un izložu jautājumi", tema: "Jautājums par azartspēlēm un izlozēm", struktura: "VID azartspēļu un izložu jomas speciālists", teksts: text };
+  if (/(azart|izloz|izlož|loterij)/.test(t)) return { kategorija: "Azartspēļu un izložu jautājumi", tema: "Jautājums par azartspēlēm un izlozēm", struktura: "VID azartspēļu un izložu jautājumu speciālists", teksts: text };
   if (/(muit|sūtījum|paka|imports|ievest|deklarēt preci)/.test(t))
     return {
       kategorija: "Muitas jautājumi",

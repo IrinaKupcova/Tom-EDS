@@ -167,17 +167,17 @@ function VidPage() {
       : panel?.kind === "domain" && panel.step === "points"
         ? "Rakstīt uz muitas kontroles punktu"
       : panel?.kind === "domain" && panel.domain === "customs"
-        ? "Muitas joma"
+        ? "Muitas jautājumi"
         : panel?.kind === "domain" && panel.domain === "gambling"
-          ? "Azartspēļu un izložu joma"
-          : "Nodokļu joma";
+          ? "Azartspēļu un izložu jautājumi"
+          : "Nodokļu jautājumi";
   const chatSurface = (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-card" aria-label="Toms — VID virtuālais asistents">
       <div className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
         {chatCategory !== "customs" && chatCategory !== "gambling" && <TomsAvatar size={36} />}
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-bold">{chatCategory === "customs" || chatCategory === "gambling" ? "Virtuālais asistents" : "Toms"}</h3>
-          <p className="text-xs">VID virtuālais asistents{chatCategory === "customs" ? " · muitas jautājumi" : chatCategory === "gambling" ? " · azartspēles un izlozes" : ""}</p>
+          <p className="text-xs">VID virtuālais asistents{chatCategory === "customs" ? " · muitas jautājumi" : chatCategory === "gambling" ? " · azartspēļu un izložu jautājumi" : " · nodokļu jautājumi"}</p>
         </div>
       </div>
       <TomsChat
