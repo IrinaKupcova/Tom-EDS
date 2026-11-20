@@ -4,10 +4,14 @@
     document.querySelectorAll(".fixed.bottom-5").forEach(function (node) {
       node.remove();
     });
+    if (location.hash === "#toms") {
+      try { sessionStorage.setItem("vid-start-view-v1", "eds"); } catch (error) { /* Sākuma skats nav obligāts. */ }
+    }
     if (location.hash === "#pieslegties") showAuth();
     if (edsFile()) clarifyMailbox();
     hideHomeButton();
     showStartChoice();
+    if (location.hash === "#toms") showTomsResume();
   });
 
   var channel = "chat";
@@ -78,7 +82,7 @@
     if (channel === "gambling" || /azart|izlož|izloz|licenc|atļauj/.test(t)) {
       return remember(text, "Par azartspēlēm un izlozēm aktuālo kārtību skatiet https://www.vid.gov.lv/lv .", false);
     }
-    return remember(text, specialistOffer, true);
+    return remember(text, "Paldies. Vispārīgu informāciju varat izlasīt https://www.vid.gov.lv/lv . Ja vēlaties iesniegt dokumentu, vispirms skatiet EDS sadaļu Dokumenti.", false);
   }
 
   function portraitSrc() {
@@ -167,7 +171,8 @@
       login.addEventListener("click", function (event) {
         event.preventDefault();
         event.stopPropagation();
-        location.href = "eds/index.html#pieslegties";
+        try { sessionStorage.setItem("toms-local-chat", JSON.stringify({ channel: channel, lines: dialogue.slice() })); } catch (error) { /* Sarunu var turpināt arī bez saglabāšanas. */ }
+        location.href = "eds/index.html#toms";
       });
       replyBubble.appendChild(login);
     }
@@ -585,6 +590,53 @@
     { region: "Latgale", points: ["Terehovas muitas kontroles punkts", "Grebņevas muitas kontroles punkts", "Pāternieku muitas kontroles punkts", "Rēzeknes II muitas kontroles punkts", "Daugavpils preču stacijas muitas kontroles punkts", "Zilupes muitas kontroles punkts", "Kārsavas muitas kontroles punkts", "Indras muitas kontroles punkts"] },
     { region: "Zemgale un Vidzeme", points: ["Jelgavas muitas kontroles punkts", "Valmieras muitas kontroles punkts"] }
   ];
+
+  function appendBubble(log, isUser, text) {
+    var row = document.createElement("div");
+    row.className = isUser ? "mt-4 flex justify-end" : "mt-4 flex items-start gap-2";
+    if (!isUser) row.innerHTML = '<img alt="" class="local-chat-mini" src="' + portraitSrc() + '">';
+    var bubble = document.createElement("div");
+    bubble.className = (isUser ? "bubble-user" : "bubble-toms") + " whitespace-pre-wrap";
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    log.appendChild(row);
+  }
+
+  function openResumedChat() {
+    var saved = { channel: "chat", lines: [] };
+    try { saved = JSON.parse(sessionStorage.getItem("toms-local-chat") || "null") || saved; } catch (error) { saved = { channel: "chat", lines: [] }; }
+    sessionStorage.removeItem("toms-local-chat");
+    var next = saved.channel === "customs" || saved.channel === "gambling" ? saved.channel : "chat";
+    openChat(next);
+    var log = panel.querySelector("[data-log]");
+    log.textContent = "";
+    (Array.isArray(saved.lines) ? saved.lines : []).forEach(function (line) {
+      if (/jāpieslēdzas EDS|pieslēgties EDS/i.test(line)) return;
+      appendBubble(log, line.indexOf("Klients: ") === 0, line.replace(/^Klients: |^Toms: /, ""));
+    });
+    appendBubble(log, false, "Pēc pieslēgšanās turpinām šo sarunu. Varu atbildēt tālāk uz šo jautājumu.");
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  function showTomsResume() {
+    var box = document.getElementById("local-auth");
+    if (!box) {
+      box = document.createElement("section");
+      box.id = "local-auth";
+      box.className = "fixed bottom-0 left-0 right-0 top-12 z-40 flex flex-col bg-background";
+      document.body.appendChild(box);
+    }
+    box.hidden = false;
+    box.innerHTML =
+      '<div class="flex items-center justify-between border-b border-border bg-card px-4 py-3"><h2 class="text-base font-bold text-primary">Pieslēgties EDS</h2><button type="button" data-close class="rounded-md border border-primary px-3 py-2 text-sm text-primary">Aizvērt</button></div>' +
+      '<div class="mx-auto mt-8 w-full max-w-[430px] border border-border bg-card p-6">' +
+      '<p class="mb-4 text-sm leading-6">Pēc pieslēgšanās turpināsies iesāktā saruna ar VID virtuālo asistentu.</p>' +
+      '<button type="button" data-person class="mb-3 w-full rounded-lg border border-border bg-background p-4 text-left"><span class="block text-sm font-bold text-primary">Pārstāv fizisko personu</span><span class="mt-1 block text-sm">Jānis Bērziņš</span></button>' +
+      '<button type="button" data-company class="w-full rounded-lg border border-border bg-background p-4 text-left"><span class="block text-sm font-bold text-primary">Pārstāv juridisko personu</span><span class="mt-1 block text-sm">SIA Bērziņš</span></button></div>';
+    box.querySelector("[data-close]").addEventListener("click", function () { box.remove(); });
+    box.querySelector("[data-person]").addEventListener("click", function () { representedName = "Jānis Bērziņš"; box.remove(); openResumedChat(); });
+    box.querySelector("[data-company]").addEventListener("click", function () { representedName = "SIA Bērziņš"; box.remove(); openResumedChat(); });
+  }
 
   function showAuth() {
     var box = document.getElementById("local-auth");

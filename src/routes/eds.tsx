@@ -181,12 +181,10 @@ function EdsPage() {
         requestText.current = lastUser;
         setCat(c);
         setTab("compose");
-        const gamblingContinuation = gamblingReply(lastUser, previous);
-        const continuation = c !== "gambling"
-          ? edsReply(lastUser, 0)
-          : gamblingContinuation.some((m) => m.action === "auth")
-            ? [{ from: "toms" as const, text: "Pēc pieslēgšanās turpinām azartspēļu un izložu jautājumu. Ja vajag konkrētas situācijas izvērtējumu, varat rakstīt VID speciālistam." }]
-            : gamblingContinuation;
+        const raw = c === "gambling" ? gamblingReply(lastUser, previous) : edsReply(lastUser, 0);
+        const continuation = raw.some((message) => message.action === "summary" || message.action === "auth")
+          ? [{ from: "toms" as const, text: "Pēc pieslēgšanās turpinām šo sarunu. Varu atbildēt tālāk uz šo jautājumu." }]
+          : raw;
         chat.reset([
           ...previous.filter((m) => m.action !== "auth" && !m.text.toLowerCase().includes("identifik")),
           ...continuation,

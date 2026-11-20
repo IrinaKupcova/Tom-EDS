@@ -19,11 +19,12 @@ export async function completeUnclearReply(scripted: Msg[], history: Msg[], doma
   try {
     const { text } = await askAssistant({ data: { history: toAiHistory(history), domain } });
     const usable = usableAssistantAnswer(text);
-    if (usable && !/NAV_VIENNOZIMIGAS/i.test(usable)) return [{ from: "toms", text: usable }];
+    if (usable && /NAV_VIENNOZIMIGAS/i.test(usable)) return uncertainHandoff(history);
+    if (usable) return [{ from: "toms", text: usable }];
   } catch {
-    /* The scripted handoff stays available when the model cannot be reached. */
+    /* Bez modeļa atbildes saruna paliek pie bota. */
   }
-  return uncertainHandoff(history);
+  return scripted;
 }
 
 export function usableAssistantAnswer(text: string) {
