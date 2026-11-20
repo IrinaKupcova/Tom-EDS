@@ -450,6 +450,7 @@ function EdsPage() {
                 <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-secondary px-4 py-8">
                   <div className="flex h-[min(640px,100%)] w-full max-w-[440px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg">
                   <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <p className="border-b border-border bg-secondary px-4 py-2 text-xs font-bold text-primary">Identificēts EDS lietotājs {represented === "company" ? "SIA Bērziņš" : "Jānis Bērziņš"}</p>
                     <div className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
                       <TomsAvatar size={36} />
                       <div className="min-w-0 flex-1">
